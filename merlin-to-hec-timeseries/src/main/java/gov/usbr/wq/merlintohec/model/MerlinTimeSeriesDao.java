@@ -19,10 +19,13 @@ import hec.io.TimeSeriesContainer;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toList;
 
 /**
  * This is intended to be the main class
@@ -43,7 +46,7 @@ public final class MerlinTimeSeriesDao
 													.filter(Objects::nonNull)
 													.map(this::convertToTsc)
 													.filter(Objects::nonNull)
-													.collect(Collectors.toList());
+													.collect(toList());
 	}
 
 	private TimeSeriesContainer convertToTsc(DataWrapper data)
@@ -77,8 +80,7 @@ public final class MerlinTimeSeriesDao
 		}
 		catch (HttpAccessException | IOException ex)
 		{
-			String errorMsg = "Unable to access the merlin web services to retrieve measurements for template " + template;
-			LOGGER.log(Level.WARNING, errorMsg, ex);
+			LOGGER.log(Level.WARNING, ex, () -> "Unable to access the merlin web services to retrieve measurements for template " + template);
 			return Collections.emptyList();
 		}
 	}
@@ -102,7 +104,7 @@ public final class MerlinTimeSeriesDao
 		}
 		catch (HttpAccessException | IOException ex)
 		{
-			LOGGER.log(Level.WARNING, "Unable to access the merlin web services to retrieve measurements for " + measure, ex);
+			LOGGER.log(Level.WARNING, ex, () -> "Unable to access the merlin web services to retrieve measurements for " + measure);
 		}
 		return output;
 	}

@@ -10,7 +10,6 @@ package gov.usbr.wq.merlintohec.model;
 
 import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.EventWrapper;
-import gov.usbr.wq.merlintohec.exceptions.MerlinDataException;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.util.HecTime;
 import hec.io.TimeSeriesContainer;
@@ -21,7 +20,8 @@ import mil.army.usace.hec.metadata.IntervalFactory;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
