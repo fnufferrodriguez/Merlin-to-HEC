@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data-exchange-configuration xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance">
+    <datastore-merlin id="www.grabdata2.com" url="https://www.grabdata2.com/merlinwebservice"/>
+    <datastore-local-dss id="wat">
+        <filepath>$WATERSHED/shared/filename.dss</filepath>
+    </datastore-local-dss>
+    <ts-data-exchange-set id="merlin_mock_dx" template-id="80" quality-version-id="0" unit-system="SI" sort-order="0.0">
+        <datastore-ref-merlin id="www.grabdata2.com"/>
+        <datastore-ref-local-dss id="wat"/>
+    </ts-data-exchange-set>
+</data-exchange-configuration>
