@@ -3,23 +3,27 @@ package gov.usbr.wq.merlindataexchange;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import hec.heclib.util.Unit;
 
-final class TimeSeriesDataExchangeSet
+final class DataExchangeSet
 {
     @JacksonXmlProperty(isAttribute = true, localName = "id")
     private String _id;
     @JacksonXmlProperty(isAttribute = true, localName = "template-id")
     private int _templateId;
+    @JacksonXmlProperty(isAttribute = true, localName = "template-name")
+    private String _templateName;
     @JacksonXmlProperty(isAttribute = true, localName = "quality-version-id")
     private Integer _qualityVersionId;
+    @JacksonXmlProperty(isAttribute = true, localName = "quality-version-name")
+    private String _qualityVersionName;
     @JacksonXmlProperty(isAttribute = true, localName = "unit-system")
     private String _unitSystem = Unit.SI;
-    @JacksonXmlProperty(isAttribute = true, localName = "sort-order")
-    private double _sortOrder = 0.0;
+    @JacksonXmlProperty(localName = "data-type")
+    private String _dataType;
     @JacksonXmlProperty(localName = "datastore-ref-merlin")
     private DataStoreRef _dataStoreRefMerlin;
-
     @JacksonXmlProperty(localName = "datastore-ref-local-dss")
     private DataStoreRef _dataStoreRefLocalDss;
+
 
     String getId()
     {
@@ -61,15 +65,6 @@ final class TimeSeriesDataExchangeSet
         _unitSystem = unitSystem;
     }
 
-    double getSortOrder() {
-        return _sortOrder;
-    }
-
-    void setSortOrder(double sortOrder)
-    {
-        _sortOrder = sortOrder;
-    }
-
     DataStoreRef getDataStoreRefMerlin()
     {
         return _dataStoreRefMerlin;
@@ -90,4 +85,33 @@ final class TimeSeriesDataExchangeSet
         _dataStoreRefLocalDss = dataStoreRefLocalDss;
     }
 
+    String getTemplateName()
+    {
+        return _templateName;
+    }
+
+    void setTemplateName(String templateName)
+    {
+        _templateName = templateName;
+    }
+
+    String getQualityVersionName()
+    {
+        return _qualityVersionName;
+    }
+
+    void setQualityVersionName(String qualityVersionName)
+    {
+        _qualityVersionName = qualityVersionName;
+    }
+
+    String getDataType()
+    {
+        return _dataType;
+    }
+
+    void setDataType(String dataType)
+    {
+        _dataType = dataType;
+    }
 }

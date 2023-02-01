@@ -1,5 +1,6 @@
 package gov.usbr.wq.merlindataexchange;
 
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import javax.xml.stream.XMLInputFactory;
@@ -15,8 +16,10 @@ final class MerlinDataExchangeParser
     {
         XMLInputFactory factory = XMLInputFactory.newFactory();
         XMLStreamReader streamReader = factory.createXMLStreamReader(Files.newInputStream(configFilepath));
-        XmlMapper mapper = new XmlMapper();
+        JacksonXmlModule module = new JacksonXmlModule();
+        module.setDefaultUseWrapper(false);
+        XmlMapper xmlMapper = new XmlMapper(module);
         streamReader.next(); // to point to <root>
-        return mapper.readValue(streamReader, DataExchangeConfiguration.class);
+        return xmlMapper.readValue(streamReader, DataExchangeConfiguration.class);
     }
 }

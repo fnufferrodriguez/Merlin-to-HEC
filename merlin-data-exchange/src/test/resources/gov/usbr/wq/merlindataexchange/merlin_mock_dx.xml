@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data-exchange-configuration xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance">
-    <datastore-merlin id="www.grabdata2.com" url="https://www.grabdata2.com/merlinwebservice"/>
+    <datastore-merlin id="www.grabdata.com" url="https://www.grabdata.com/merlinwebservice">
+        <datastore-type>merlin</datastore-type>
+    </datastore-merlin>
+    <datastore-merlin id="www.grabdata2.com" url="https://www.grabdata2.com/merlinwebservice">
+        <datastore-type>merlin</datastore-type>
+    </datastore-merlin>
     <datastore-local-dss id="wat">
+        <datastore-type>dss</datastore-type>
         <filepath>$WATERSHED/shared/filename.dss</filepath>
     </datastore-local-dss>
-    <ts-data-exchange-set id="merlin_mock_dx" template-id="80" quality-version-id="0" unit-system="SI" sort-order="0.0">
-        <datastore-ref-merlin id="www.grabdata2.com"/>
+    <datastore-local-dss id="wat2">
+        <datastore-type>dss</datastore-type>
+        <filepath>$WATERSHED/shared/filename2.dss</filepath>
+    </datastore-local-dss>
+    <data-exchange-set id="Auburn Dam - Daily" template-id="80" template-name = "Auburn Dam - Daily" quality-version-id="0" quality-version-name = "All" unit-system="SI">
+        <data-type>time-series</data-type>
+        <datastore-ref-merlin id="www.grabdata.com"/>
         <datastore-ref-local-dss id="wat"/>
-    </ts-data-exchange-set>
+    </data-exchange-set>
+    <data-exchange-set id="Folsom Lake - MR Boundary Flow" template-id="83" template-name = "Folsom Lake - MR Boundary Flow" quality-version-id="0" quality-version-name = "All" unit-system="SI">
+        <data-type>time-series</data-type>
+        <datastore-ref-merlin id="www.grabdata2.com"/>
+        <datastore-ref-local-dss id="wat2"/>
+    </data-exchange-set>
 </data-exchange-configuration>

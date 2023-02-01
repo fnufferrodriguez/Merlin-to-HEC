@@ -3,62 +3,46 @@ package gov.usbr.wq.merlindataexchange;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
+import java.util.List;
+
 @JacksonXmlRootElement(namespace = "https://www.w3.org/2001/XMLSchema-instance", localName = "data-exchange-configuration")
 final class DataExchangeConfiguration
 {
     @JacksonXmlProperty(localName = "datastore-merlin")
-    private DataStoreMerlin _dataStoreMerlin;
+    private List<DataStoreMerlin> _dataStoresMerlin;
     @JacksonXmlProperty(localName = "datastore-local-dss")
-    private DataStoreLocalDss _dataStoreLocalDss;
-    @JacksonXmlProperty(localName = "ts-data-exchange-set")
-    private TimeSeriesDataExchangeSet _timeSeriesDataExchangeSet;
+    private List<DataStoreLocalDss> _dataStoresLocalDss;
+    @JacksonXmlProperty(localName = "data-exchange-set")
+    private List<DataExchangeSet> _dataExchangeSet;
 
-    DataStoreMerlin getDataStoreMerlin()
+    List<DataStoreMerlin> getDataStoresMerlin()
     {
-        return _dataStoreMerlin;
+        return _dataStoresMerlin;
     }
 
-    void setDataStoreMerlin(DataStoreMerlin dataStoreMerlin)
+    void setDataStoresMerlin(List<DataStoreMerlin> dataStoreMerlin)
     {
-        _dataStoreMerlin = dataStoreMerlin;
+        _dataStoresMerlin = dataStoreMerlin;
     }
 
-    DataStoreLocalDss getDataStoreLocalDss()
+    List<DataStoreLocalDss> getDataStoresLocalDss()
     {
-        return _dataStoreLocalDss;
+        return _dataStoresLocalDss;
     }
 
-    void setDataStoreLocalDss(DataStoreLocalDss dataStoreLocalDss)
+    void setDataStoresLocalDss(List<DataStoreLocalDss> dataStoresLocalDss)
     {
-        _dataStoreLocalDss = dataStoreLocalDss;
+        _dataStoresLocalDss = dataStoresLocalDss;
     }
 
-    TimeSeriesDataExchangeSet getTimeSeriesDataExchangeSet()
+    List<DataExchangeSet> getTimeSeriesDataExchangeSets()
     {
-        return _timeSeriesDataExchangeSet;
+        return _dataExchangeSet;
     }
 
-    void setTimeSeriesDataExchangeSet(TimeSeriesDataExchangeSet timeSeriesDataExchangeSet)
+    void setTimeSeriesDataExchangeSets(List<DataExchangeSet> dataExchangeSet)
     {
-        _timeSeriesDataExchangeSet = timeSeriesDataExchangeSet;
-    }
-
-    DataStore getDataStoreByRef(DataStoreRef ref)
-    {
-        DataStore retVal = null;
-        if(ref != null)
-        {
-            String id = ref.getId();
-            if(id.equalsIgnoreCase(_dataStoreMerlin.getId()))
-            {
-                retVal = _dataStoreMerlin;
-            }
-            else if(id.equalsIgnoreCase(_dataStoreLocalDss.getId()))
-            {
-                retVal = _dataStoreLocalDss;
-            }
-        }
-        return retVal;
+        _dataExchangeSet = dataExchangeSet;
     }
 
 }

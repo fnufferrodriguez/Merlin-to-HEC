@@ -6,6 +6,8 @@ class DataStore
 {
     @JacksonXmlProperty(isAttribute = true, localName = "id")
     private String _id;
+    @JacksonXmlProperty(localName = "datastore-type")
+    private String _dataStoreType;
 
     String getId()
     {
@@ -17,4 +19,13 @@ class DataStore
         this._id = id;
     }
 
+    String getDataStoreType()
+    {
+        return _dataStoreType;
+    }
+
+    void setDataStoreType(String dataStoreType)
+    {
+        _dataStoreType = dataStoreType;
+    }
 }

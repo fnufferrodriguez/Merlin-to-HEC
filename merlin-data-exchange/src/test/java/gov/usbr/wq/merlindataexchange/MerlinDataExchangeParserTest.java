@@ -7,9 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class MerlinDataExchangeParserTest
 {
@@ -19,22 +19,49 @@ final class MerlinDataExchangeParserTest
         Path mockXml = getMockXml();
         DataExchangeConfiguration dataExchangeConfig = MerlinDataExchangeParser.parseXmlFile(mockXml);
         assertNotNull(dataExchangeConfig);
-        TimeSeriesDataExchangeSet tsDataExchangeSet = dataExchangeConfig.getTimeSeriesDataExchangeSet();
-        assertNotNull(tsDataExchangeSet);
-        DataStoreRef merlinRef = tsDataExchangeSet.getDataStoreRefMerlin();
-        DataStoreRef localDssRef = tsDataExchangeSet.getDataStoreRefLocalDss();
-        DataStoreMerlin dataStoreMerlin = (DataStoreMerlin) dataExchangeConfig.getDataStoreByRef(merlinRef);
-        DataStoreLocalDss dataStoreLocalDss = (DataStoreLocalDss) dataExchangeConfig.getDataStoreByRef(localDssRef);
-        assertEquals(dataExchangeConfig.getDataStoreMerlin(), dataStoreMerlin);
-        assertEquals(dataExchangeConfig.getDataStoreLocalDss(), dataStoreLocalDss);
-        assertEquals("www.grabdata2.com", dataStoreMerlin.getId());
-        assertEquals("https://www.grabdata2.com/merlinwebservice", dataStoreMerlin.getUrl());
-        assertEquals("wat", dataStoreLocalDss.getId());
-        assertEquals("$WATERSHED/shared/filename.dss", dataStoreLocalDss.getFilepath());
-        assertEquals(80, tsDataExchangeSet.getTemplateId());
-        assertEquals(0, tsDataExchangeSet.getQualityVersionId());
-        assertEquals("SI", tsDataExchangeSet.getUnitSystem());
-        assertEquals(0.0, tsDataExchangeSet.getSortOrder());
+        List<DataExchangeSet> tsDataExchangeSets = dataExchangeConfig.getTimeSeriesDataExchangeSets();
+        assertFalse(tsDataExchangeSets.isEmpty());
+        DataExchangeSet tsDataExchangeSet1 = tsDataExchangeSets.get(0);
+        DataExchangeSet tsDataExchangeSet2 = tsDataExchangeSets.get(1);
+        DataStoreRef merlinRef1 = tsDataExchangeSet1.getDataStoreRefMerlin();
+        DataStoreRef localDssRef1 = tsDataExchangeSet1.getDataStoreRefLocalDss();
+        DataStoreRef merlinRef2 = tsDataExchangeSet2.getDataStoreRefMerlin();
+        DataStoreRef localDssRef2 = tsDataExchangeSet2.getDataStoreRefLocalDss();
+
+        List<DataStoreMerlin> dataStoresMerlin = dataExchangeConfig.getDataStoresMerlin();
+        List<DataStoreLocalDss> dataStoreLocalDss = dataExchangeConfig.getDataStoresLocalDss();
+        assertNotNull(dataStoresMerlin);
+        assertNotNull(dataStoreLocalDss);
+
+        DataStoreMerlin dataStoreMerlin1 = dataStoresMerlin.get(0);
+        DataStoreLocalDss dataStoreLocalDss1 = dataStoreLocalDss.get(0);
+        assertEquals("www.grabdata.com", dataStoreMerlin1.getId());
+        assertEquals("https://www.grabdata.com/merlinwebservice", dataStoreMerlin1.getUrl());
+        assertEquals("wat", dataStoreLocalDss1.getId());
+        assertEquals("$WATERSHED/shared/filename.dss", dataStoreLocalDss1.getFilepath());
+        assertEquals(80, tsDataExchangeSet1.getTemplateId());
+        assertEquals("Auburn Dam - Daily", tsDataExchangeSet1.getTemplateName());
+        assertEquals(0, tsDataExchangeSet1.getQualityVersionId());
+        assertEquals("All", tsDataExchangeSet1.getQualityVersionName());
+        assertEquals("SI", tsDataExchangeSet1.getUnitSystem());
+        assertEquals("time-series", tsDataExchangeSet1.getDataType());
+        assertEquals("www.grabdata.com", merlinRef1.getId());
+        assertEquals("wat", localDssRef1.getId());
+
+        DataStoreMerlin dataStoreMerlin2 = dataStoresMerlin.get(1);
+        DataStoreLocalDss dataStoreLocalDss2 = dataStoreLocalDss.get(1);
+        assertEquals("www.grabdata2.com", dataStoreMerlin2.getId());
+        assertEquals("https://www.grabdata2.com/merlinwebservice", dataStoreMerlin2.getUrl());
+        assertEquals("wat2", dataStoreLocalDss2.getId());
+        assertEquals("$WATERSHED/shared/filename2.dss", dataStoreLocalDss2.getFilepath());
+        assertEquals(83, tsDataExchangeSet2.getTemplateId());
+        assertEquals("Folsom Lake - MR Boundary Flow", tsDataExchangeSet2.getTemplateName());
+        assertEquals(0, tsDataExchangeSet2.getQualityVersionId());
+        assertEquals("All", tsDataExchangeSet2.getQualityVersionName());
+        assertEquals("SI", tsDataExchangeSet2.getUnitSystem());
+        assertEquals("time-series", tsDataExchangeSet2.getDataType());
+        assertEquals("www.grabdata2.com", merlinRef2.getId());
+        assertEquals("wat2", localDssRef2.getId());
     }
 
     private Path getMockXml() throws IOException
