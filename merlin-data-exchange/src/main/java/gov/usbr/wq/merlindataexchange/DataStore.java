@@ -9,6 +9,9 @@ class DataStore
     @JacksonXmlProperty(localName = "datastore-type")
     private String _dataStoreType;
 
+    @JacksonXmlProperty(localName = "path")
+    private String _path;
+
     String getId()
     {
         return _id;
@@ -27,5 +30,15 @@ class DataStore
     void setDataStoreType(String dataStoreType)
     {
         _dataStoreType = dataStoreType;
+    }
+
+    String getPath()
+    {
+        return _path;
+    }
+
+    void setPath(String path)
+    {
+        _path = path;
     }
 }

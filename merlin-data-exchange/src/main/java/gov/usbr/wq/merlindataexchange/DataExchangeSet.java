@@ -19,10 +19,10 @@ final class DataExchangeSet
     private String _unitSystem = Unit.SI;
     @JacksonXmlProperty(localName = "data-type")
     private String _dataType;
-    @JacksonXmlProperty(localName = "datastore-ref-merlin")
-    private DataStoreRef _dataStoreRefMerlin;
-    @JacksonXmlProperty(localName = "datastore-ref-local-dss")
-    private DataStoreRef _dataStoreRefLocalDss;
+    @JacksonXmlProperty(localName = "datastore-ref-a")
+    private DataStoreRef _dataStoreRefA;
+    @JacksonXmlProperty(localName = "datastore-ref-b")
+    private DataStoreRef _dataStoreRefB;
 
 
     String getId()
@@ -65,24 +65,24 @@ final class DataExchangeSet
         _unitSystem = unitSystem;
     }
 
-    DataStoreRef getDataStoreRefMerlin()
+    DataStoreRef getDataStoreRefA()
     {
-        return _dataStoreRefMerlin;
+        return _dataStoreRefA;
     }
 
-    void setDataStoreRefMerlin(DataStoreRef dataStoreRefMerlin)
+    void setDataStoreRefA(DataStoreRef dataStoreRefA)
     {
-        _dataStoreRefMerlin = dataStoreRefMerlin;
+        _dataStoreRefA = dataStoreRefA;
     }
 
-    DataStoreRef getDataStoreRefLocalDss()
+    DataStoreRef getDataStoreRefB()
     {
-        return _dataStoreRefLocalDss;
+        return _dataStoreRefB;
     }
 
-    void setDataStoreRefLocalDss(DataStoreRef dataStoreRefLocalDss)
+    void setDataStoreRefB(DataStoreRef dataStoreRefB)
     {
-        _dataStoreRefLocalDss = dataStoreRefLocalDss;
+        _dataStoreRefB = dataStoreRefB;
     }
 
     String getTemplateName()

@@ -8,39 +8,27 @@ import java.util.List;
 @JacksonXmlRootElement(namespace = "https://www.w3.org/2001/XMLSchema-instance", localName = "data-exchange-configuration")
 final class DataExchangeConfiguration
 {
-    @JacksonXmlProperty(localName = "datastore-merlin")
-    private List<DataStoreMerlin> _dataStoresMerlin;
-    @JacksonXmlProperty(localName = "datastore-local-dss")
-    private List<DataStoreLocalDss> _dataStoresLocalDss;
+    @JacksonXmlProperty(localName = "datastore")
+    private List<DataStore> _dataStores;
     @JacksonXmlProperty(localName = "data-exchange-set")
     private List<DataExchangeSet> _dataExchangeSet;
 
-    List<DataStoreMerlin> getDataStoresMerlin()
+    List<DataStore> getDataStores()
     {
-        return _dataStoresMerlin;
+        return _dataStores;
     }
 
-    void setDataStoresMerlin(List<DataStoreMerlin> dataStoreMerlin)
+    void setDataStoresMerlin(List<DataStore> dataStores)
     {
-        _dataStoresMerlin = dataStoreMerlin;
+        _dataStores = dataStores;
     }
 
-    List<DataStoreLocalDss> getDataStoresLocalDss()
-    {
-        return _dataStoresLocalDss;
-    }
-
-    void setDataStoresLocalDss(List<DataStoreLocalDss> dataStoresLocalDss)
-    {
-        _dataStoresLocalDss = dataStoresLocalDss;
-    }
-
-    List<DataExchangeSet> getTimeSeriesDataExchangeSets()
+    List<DataExchangeSet> getDataExchangeSets()
     {
         return _dataExchangeSet;
     }
 
-    void setTimeSeriesDataExchangeSets(List<DataExchangeSet> dataExchangeSet)
+    void setDataExchangeSets(List<DataExchangeSet> dataExchangeSet)
     {
         _dataExchangeSet = dataExchangeSet;
     }

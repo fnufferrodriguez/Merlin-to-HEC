@@ -19,26 +19,24 @@ final class MerlinDataExchangeParserTest
         Path mockXml = getMockXml();
         DataExchangeConfiguration dataExchangeConfig = MerlinDataExchangeParser.parseXmlFile(mockXml);
         assertNotNull(dataExchangeConfig);
-        List<DataExchangeSet> tsDataExchangeSets = dataExchangeConfig.getTimeSeriesDataExchangeSets();
+        List<DataExchangeSet> tsDataExchangeSets = dataExchangeConfig.getDataExchangeSets();
         assertFalse(tsDataExchangeSets.isEmpty());
         DataExchangeSet tsDataExchangeSet1 = tsDataExchangeSets.get(0);
         DataExchangeSet tsDataExchangeSet2 = tsDataExchangeSets.get(1);
-        DataStoreRef merlinRef1 = tsDataExchangeSet1.getDataStoreRefMerlin();
-        DataStoreRef localDssRef1 = tsDataExchangeSet1.getDataStoreRefLocalDss();
-        DataStoreRef merlinRef2 = tsDataExchangeSet2.getDataStoreRefMerlin();
-        DataStoreRef localDssRef2 = tsDataExchangeSet2.getDataStoreRefLocalDss();
+        DataStoreRef merlinRef1 = tsDataExchangeSet1.getDataStoreRefA();
+        DataStoreRef localDssRef1 = tsDataExchangeSet1.getDataStoreRefB();
+        DataStoreRef merlinRef2 = tsDataExchangeSet2.getDataStoreRefA();
+        DataStoreRef localDssRef2 = tsDataExchangeSet2.getDataStoreRefB();
 
-        List<DataStoreMerlin> dataStoresMerlin = dataExchangeConfig.getDataStoresMerlin();
-        List<DataStoreLocalDss> dataStoreLocalDss = dataExchangeConfig.getDataStoresLocalDss();
-        assertNotNull(dataStoresMerlin);
-        assertNotNull(dataStoreLocalDss);
+        List<DataStore> dataStores = dataExchangeConfig.getDataStores();
+        assertNotNull(dataStores);
 
-        DataStoreMerlin dataStoreMerlin1 = dataStoresMerlin.get(0);
-        DataStoreLocalDss dataStoreLocalDss1 = dataStoreLocalDss.get(0);
+        DataStore dataStoreMerlin1 = dataStores.get(0);
+        DataStore dataStoreLocalDss1 = dataStores.get(2);
         assertEquals("www.grabdata.com", dataStoreMerlin1.getId());
-        assertEquals("https://www.grabdata.com/merlinwebservice", dataStoreMerlin1.getUrl());
+        assertEquals("https://www.grabdata.com/merlinwebservice", dataStoreMerlin1.getPath());
         assertEquals("wat", dataStoreLocalDss1.getId());
-        assertEquals("$WATERSHED/shared/filename.dss", dataStoreLocalDss1.getFilepath());
+        assertEquals("$WATERSHED/shared/filename.dss", dataStoreLocalDss1.getPath());
         assertEquals(80, tsDataExchangeSet1.getTemplateId());
         assertEquals("Auburn Dam - Daily", tsDataExchangeSet1.getTemplateName());
         assertEquals(0, tsDataExchangeSet1.getQualityVersionId());
@@ -48,12 +46,12 @@ final class MerlinDataExchangeParserTest
         assertEquals("www.grabdata.com", merlinRef1.getId());
         assertEquals("wat", localDssRef1.getId());
 
-        DataStoreMerlin dataStoreMerlin2 = dataStoresMerlin.get(1);
-        DataStoreLocalDss dataStoreLocalDss2 = dataStoreLocalDss.get(1);
+        DataStore dataStoreMerlin2 = dataStores.get(1);
+        DataStore dataStoreLocalDss2 = dataStores.get(3);
         assertEquals("www.grabdata2.com", dataStoreMerlin2.getId());
-        assertEquals("https://www.grabdata2.com/merlinwebservice", dataStoreMerlin2.getUrl());
+        assertEquals("https://www.grabdata2.com/merlinwebservice", dataStoreMerlin2.getPath());
         assertEquals("wat2", dataStoreLocalDss2.getId());
-        assertEquals("$WATERSHED/shared/filename2.dss", dataStoreLocalDss2.getFilepath());
+        assertEquals("$WATERSHED/shared/filename2.dss", dataStoreLocalDss2.getPath());
         assertEquals(83, tsDataExchangeSet2.getTemplateId());
         assertEquals("Folsom Lake - MR Boundary Flow", tsDataExchangeSet2.getTemplateName());
         assertEquals(0, tsDataExchangeSet2.getQualityVersionId());

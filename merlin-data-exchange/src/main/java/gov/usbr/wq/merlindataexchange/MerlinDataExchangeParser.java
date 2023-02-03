@@ -12,6 +12,11 @@ import java.nio.file.Path;
 
 final class MerlinDataExchangeParser
 {
+    private MerlinDataExchangeParser()
+    {
+        throw new AssertionError("Utility class for parsing. Do not instantiate.");
+    }
+
     static DataExchangeConfiguration parseXmlFile(Path configFilepath) throws IOException, XMLStreamException
     {
         XMLInputFactory factory = XMLInputFactory.newFactory();
