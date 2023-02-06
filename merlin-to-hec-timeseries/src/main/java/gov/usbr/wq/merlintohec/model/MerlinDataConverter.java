@@ -14,14 +14,11 @@ import hec.heclib.dss.DSSPathname;
 import hec.heclib.util.HecTime;
 import hec.io.TimeSeriesContainer;
 import hec.lang.Const;
-import mil.army.usace.hec.metadata.Interval;
-import mil.army.usace.hec.metadata.IntervalFactory;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.NavigableSet;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,10 +43,15 @@ final class MerlinDataConverter
 		TimeSeriesContainer output = new TimeSeriesContainer();
 		DSSPathname pathname = new DSSPathname(data.getSeriesId());
 		String fPart = pathname.getFPart();
-		int parsedInterval = Integer.parseInt(data.getTimestep());
-		Optional<Interval> opt = IntervalFactory.findAny(interval -> interval.isRegular() && interval.getMinutes() == parsedInterval);
+		String timeStep = data.getTimestep();
+		int parsedInterval = 0;
+		if(timeStep != null && !timeStep.contains(","))
+		{
+			parsedInterval = Integer.parseInt(data.getTimestep());
+		}
+
 		String path = "/" + data.getProject() + "/" + data.getStation() + "-" + data.getSensor() + "/" +
-				data.getParameter() + "//" +opt.map(Interval::getInterval).orElse("") + "/" + fPart;
+				data.getParameter() + "//" + parsedInterval + "/" + fPart;
 		output.fullName = path;
 		output.timeZoneID = data.getTimeZone().getId();
 		output.units = data.getUnits();
