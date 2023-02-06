@@ -13,13 +13,8 @@ publishing {
 
 dependencies {
     implementation project(":merlin-to-hec-timeseries")
-    implementation 'mil.army.usace.hec:hec-core:7.0-20220112.004251-159'
-    implementation 'mil.army.usace.hec:hec-data:7.0-20220112.004300-157'
-    implementation 'mil.army.usace.hec:hec-lib:6.0-20220607.200812-129!!'
-    implementation 'mil.army.usace.hec:hec-nucleus-metadata:1.0.28'
-    implementation 'mil.army.usace.hec:hec-rma:7.0-20220112.004315-152'
-    implementation 'gov.usbr.wq:merlin-web-client:1.0.0'
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.6"
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.6"
 }

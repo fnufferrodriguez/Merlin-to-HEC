@@ -4,3 +4,6 @@
 *.iml
 .DS_STORE
 */build/
+
+#This is intentionally ignored, so that we can keep user configuration info out of git.
+/src/test/resources/gov/usbr/wq/merlindataexchange/user.config

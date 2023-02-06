@@ -1,0 +1,42 @@
+image: eclipse-temurin:8-jdk
+
+stages:
+  - build
+  - deploy
+
+build-java-code:
+  stage: build
+  script:
+    - ./gradlew showGit build -PnexusUser="$NEXUS_USER" -PnexusPassword="$NEXUS_PASSWORD" -PrmaNexusUser="$RMA_NEXUS_USER" -PrmaNexusPassword="$RMA_NEXUS_PASSWORD" --no-daemon --build-cache --gradle-user-home cache/ -x test
+  artifacts:
+    paths:
+      - build/**
+      - .gradle/*
+  tags:
+    - docker
+  cache:
+    key:
+      files:
+        - gradle/wrapper/gradle-wrapper.properties
+    paths:
+      - cache/caches/**
+      - cache/notifications/**
+      - cache/wrapper/**
+
+
+deploy-to-nexus:
+  stage: deploy
+  script:
+    - ./gradlew publish -PnexusUser="$NEXUS_USER" -PnexusPassword="$NEXUS_PASSWORD" -PrmaNexusUser="$RMA_NEXUS_USER" -PrmaNexusPassword="$RMA_NEXUS_PASSWORD" --no-daemon --build-cache --gradle-user-home cache/ -x test
+  dependencies:
+    - build-java-code
+  tags:
+    - docker
+  cache:
+    key:
+      files:
+        - gradle/wrapper/gradle-wrapper.properties
+    paths:
+      - cache/caches/**
+      - cache/notifications/**
+      - cache/wrapper/**
