@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public interface DataExchangeReader
 {
     CompletableFuture<TimeSeriesContainer> readData(DataExchangeSet configuration, MerlinDataExchangeParameters runtimeParameters, DataExchangeCache cache, String seriesPath,
-                                                    TokenContainer accessToken, MerlinExchangeDaoCompletionTracker completionTracker,
+                                                    MerlinExchangeDaoCompletionTracker completionTracker,
                                                     ProgressListener progressListener, AtomicBoolean isCancelled, Logger logger, ExecutorService executorService);
 
     void close();

@@ -21,7 +21,7 @@ public abstract class DataExchangeDao
     abstract DataExchangeReader buildReader(DataStore dataStoreSource, MerlinDataExchangeParameters runtimeParameters);
     abstract DataExchangeWriter buildWriter(DataStore dataStoreDestination, MerlinDataExchangeParameters runtimeParameters);
     public CompletableFuture<Void> exchangeData(DataExchangeSet dataExchangeSet, MerlinDataExchangeParameters runtimeParameters, DataExchangeCache cache,
-                                                DataStore dataStoreSource, DataStore dataStoreDestination, String seriesPath, TokenContainer accessToken,
+                                                DataStore dataStoreSource, DataStore dataStoreDestination, String seriesPath,
                                                 MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener, AtomicBoolean isCancelled, Logger logger,
                                                 ExecutorService executorService)
     {
@@ -38,7 +38,7 @@ public abstract class DataExchangeDao
                 _writer = buildWriter(dataStoreDestination, runtimeParameters);
                 logProgress(progressListener, logger, "Destination path: " + _writer.getDestinationPath());
             }
-            retVal = _reader.readData(dataExchangeSet, runtimeParameters, cache, seriesPath, accessToken,
+            retVal = _reader.readData(dataExchangeSet, runtimeParameters, cache, seriesPath,
                             completionTracker, progressListener, isCancelled, logger, executorService)
                     .thenAcceptAsync(tsc -> _writer.writeData(tsc, seriesPath, runtimeParameters, completionTracker, progressListener, logger, isCancelled), executorService);
         }
