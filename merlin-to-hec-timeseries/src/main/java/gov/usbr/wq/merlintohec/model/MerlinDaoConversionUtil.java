@@ -14,8 +14,6 @@ import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 import hec.ui.ProgressListener.MessageType;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -28,7 +26,8 @@ public final class MerlinDaoConversionUtil
 		throw new AssertionError("Utility Class should not be instantiated");
 	}
 
-	public static TimeSeriesContainer convertToTsc(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logger) throws MerlinInvalidTimestepException
+	public static TimeSeriesContainer convertToTsc(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logger)
+			throws MerlinInvalidTimestepException
 	{
 		TimeSeriesContainer output = null;
 		if(data != null && data.getSeriesId() != null && !data.getSeriesId().isEmpty())

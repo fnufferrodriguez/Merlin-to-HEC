@@ -13,6 +13,8 @@ import java.util.logging.Logger;
 
 public final class DssDataExchangeWriter implements DataExchangeWriter
 {
+
+    private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
     private final DssFileManager _dssFileManager;
     private final Path _dssWritePath;
 
@@ -24,28 +26,29 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
 
     @Override
     public void writeData(TimeSeriesContainer timeSeriesContainer, String seriesPath, MerlinDataExchangeParameters runtimeParameters, MerlinExchangeDaoCompletionTracker completionTracker,
-                          ProgressListener progressListener, Logger logger, AtomicBoolean isCancelled)
+                          ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
     {
         StoreOption storeOption = runtimeParameters.getStoreOption();
-        int progressionIncrement = completionTracker.readWriteTaskCompleted();
         if(timeSeriesContainer != null && !isCancelled.get())
         {
             String successfulConversionMsg = "Successfully converted Measure Measure (" + seriesPath + ") to timeseries! Writing timeseries to " + _dssWritePath;
             progressListener.progress(successfulConversionMsg, ProgressListener.MessageType.IMPORTANT);
-            logger.info(() -> successfulConversionMsg);
+            logFileLogger.info(() -> successfulConversionMsg);
             timeSeriesContainer.fileName = _dssWritePath.toString();
             int success = _dssFileManager.writeTS(timeSeriesContainer, storeOption);
             if(success == 0)
             {
                 String successMsg = "Measure (" + seriesPath + ") successfully written to DSS! DSS Pathname: " + timeSeriesContainer.fullName;
-                progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, progressionIncrement);
-                logger.info(() -> successMsg);
+                progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, completionTracker.writeTaskCompleted());
+                logFileLogger.info(() -> successMsg);
+                LOGGER.config(() -> successMsg);
             }
             else
             {
                 String failMsg = "Failed to write Measure (" +  seriesPath + ") to DSS! Error status code: " + success;
-                progressListener.progress(failMsg, ProgressListener.MessageType.ERROR, progressionIncrement);
-                logger.severe(() -> failMsg);
+                progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
+                logFileLogger.severe(() -> failMsg);
+                LOGGER.config(() -> failMsg);
             }
         }
     }

@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class MerlinDataExchangeEngineTest
@@ -30,7 +31,7 @@ final class MerlinDataExchangeEngineTest
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
         Path mockXml2 = getMockXml("merlin_mock_dx.xml");
-        List<Path> mocks = Arrays.asList(mockXml2);
+        List<Path> mocks = Arrays.asList(mockXml);
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
@@ -41,7 +42,8 @@ final class MerlinDataExchangeEngineTest
         DataExchangeEngine dataExchangeEngine = lookup.lookup(DataExchangeEngine.class);
         assertNotNull(dataExchangeEngine);
         ProgressListener progressListener = buildMockProgressListener();
-        dataExchangeEngine.runExtract(mocks, params, progressListener).join();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract(mocks, params, progressListener).join();
+        assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
     }
 
     @Test

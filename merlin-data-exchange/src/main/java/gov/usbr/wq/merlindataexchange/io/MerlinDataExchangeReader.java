@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 public final class MerlinDataExchangeReader implements DataExchangeReader
 {
 
+    private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeReader.class.getName());
     private final String _sourcePath;
 
     public MerlinDataExchangeReader(String sourcePath)
@@ -40,7 +41,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     @Override
     public CompletableFuture<TimeSeriesContainer> readData(DataExchangeSet dataExchangeSet, MerlinDataExchangeParameters runtimeParameters, DataExchangeCache cache, String seriesPath,
                                                            TokenContainer accessToken, MerlinExchangeDaoCompletionTracker completionTracker,
-                                                           ProgressListener progressListener, AtomicBoolean isCancelled, Logger logger, ExecutorService executorService)
+                                                           ProgressListener progressListener, AtomicBoolean isCancelled, Logger logFileLogger, ExecutorService executorService)
     {
         Instant startTime = runtimeParameters.getStart();
         Instant endTime = runtimeParameters.getEnd();
@@ -55,27 +56,28 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         Instant start = startTime;
         Instant end = endTime;
         String fPartOverride = runtimeParameters.getFPartOverride();
-        QualityVersionWrapper qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache, logger, progressListener).orElse(null);
+        QualityVersionWrapper qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache, logFileLogger, progressListener).orElse(null);
         String unitSystemToConvertTo = dataExchangeSet.getUnitSystem();
         Integer qualityVersionId = qualityVersion == null ? null : qualityVersion.getQualityVersionID();
-        logger.info(() -> "Start time: " + start.toString() + " | End time: " + end.toString() + " | Quality version: " + qualityVersionId);
-        logger.info(() -> "Retrieving data for measure with series string: " + seriesPath + "...");
+        logFileLogger.info(() -> "Start time: " + start.toString() + " | End time: " + end.toString() + " | Quality version: " + qualityVersionId);
+        logFileLogger.info(() -> "Retrieving data for measure with series string: " + seriesPath + "...");
         progressListener.progress("Retrieving data for measure with series string: " + seriesPath + "...", MessageType.IMPORTANT);
         return CompletableFuture.supplyAsync(() ->
         {
             DataWrapper data = retrieveDataWithUpdatedTimeWindow(start, end, seriesPath, qualityVersionId,
-                    accessToken, completionTracker, progressListener, logger, isCancelled);
+                    accessToken, completionTracker, progressListener, logFileLogger, isCancelled);
             TimeSeriesContainer retVal = null;
             if(!isCancelled.get())
             {
                 try
                 {
-                    retVal = MerlinDaoConversionUtil.convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logger);
+                    retVal = MerlinDaoConversionUtil.convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger);
                 }
                 catch (MerlinInvalidTimestepException e)
                 {
-                    logger.log(Level.WARNING, e, () -> "Unsupported timestep: " + data.getTimestep());
+                    logFileLogger.log(Level.WARNING, e, () -> "Unsupported timestep: " + data.getTimestep());
                     progressListener.progress("Skipping Measure with unsupported timestep", MessageType.IMPORTANT);
+                    LOGGER.log(Level.CONFIG, e, () -> "Unsupported timestep: " + data.getTimestep());
                 }
             }
             return retVal;
@@ -97,7 +99,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
 
     private static DataWrapper retrieveDataWithUpdatedTimeWindow(Instant start, Instant end, String seriesPath, Integer qualityVersionId,
                                                                  TokenContainer accessToken, MerlinExchangeDaoCompletionTracker completionTracker,
-                                                                 ProgressListener progressListener, Logger logger, AtomicBoolean isCancelled)
+                                                                 ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
     {
         MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
         DataWrapper retVal = null;
@@ -108,13 +110,14 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
                 MeasureWrapper measure = new MeasureWrapperBuilder().withSeriesString(seriesPath).build();
                 retVal = access.getEventsBySeries(accessToken, measure, qualityVersionId, start, end);
                 String progressMsg = "Successfully retrieved data for " + measure.getSeriesString() + " with " + retVal.getEvents().size() + " events!";
-                logger.info(() -> progressMsg);
-                progressListener.progress(progressMsg, MessageType.IMPORTANT, completionTracker.readWriteTaskCompleted());
+                logFileLogger.info(() -> progressMsg);
+                progressListener.progress(progressMsg, MessageType.IMPORTANT, completionTracker.readTaskCompleted());
             }
             catch (IOException | HttpAccessException ex)
             {
-                logger.log(Level.WARNING, ex, () -> "Failed to retrieve data for " + seriesPath);
+                logFileLogger.log(Level.WARNING, ex, () -> "Failed to retrieve data for " + seriesPath);
                 progressListener.progress("Failed to retrieve data for measure with series string: " + seriesPath, MessageType.ERROR);
+                LOGGER.log(Level.CONFIG, ex, () -> "Failed to retrieve data for " + seriesPath);
             }
         }
         return retVal;

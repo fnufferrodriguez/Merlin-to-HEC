@@ -35,107 +35,109 @@ import java.util.logging.Logger;
  */
 final class MerlinDataConverter
 {
+
+	private static final Logger LOGGER = Logger.getLogger(MerlinDataConverter.class.getName());
 	private MerlinDataConverter()
 	{
 		throw new AssertionError("This utility class is not intended to be instantiated.");
 	}
 
-	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logger)
+	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logFileLogger)
 			throws MerlinInvalidTimestepException
 	{
-		if (data.getEvents().isEmpty())
-		{
-			return null;
-		}
-		String timeStep = data.getTimestep();
-		if(timeStep == null || timeStep.contains(","))
-		{
-			throw new MerlinInvalidTimestepException(timeStep, data.getSeriesId());
-		}
-
 		TimeSeriesContainer output = new TimeSeriesContainer();
-		DSSPathname pathname = new DSSPathname(data.getSeriesId());
-		pathname.setAPart(data.getProject());
-		pathname.setBPart(data.getStation() + "-" + data.getSensor());
-		pathname.setCPart(data.getParameter());
-		String fPart = pathname.getFPart();
-
-		int parsedInterval = Integer.parseInt(data.getTimestep());
-		String interval = HecTimeSeriesBase.getEPartFromInterval(parsedInterval);
-		pathname.setFPart(fPart);
-		if(fPartOverride != null)
+		if (!data.getEvents().isEmpty())
 		{
-			pathname.setFPart(fPartOverride);
-		}
-		String path = "/" + pathname.getAPart() + "/" + pathname.getBPart() + "/" +
-				pathname.getCPart() + "//" + interval + "/" + pathname.getFPart() + "/";
-		int convertToUnitSystem = Unit.UNDEF_ID;
-		if(Unit.ENGLISH.equalsIgnoreCase(unitSystemToConvertTo))
-		{
-			convertToUnitSystem = Unit.ENGLISH_ID;
-		}
-		else if(Unit.SI.equalsIgnoreCase(unitSystemToConvertTo))
-		{
-			convertToUnitSystem = Unit.SI_ID;
-		}
-		output.fullName = path;
-		output.timeZoneID = data.getTimeZone().getId();
-		output.units = data.getUnits();
-		output.interval = parsedInterval;
-		output.type = data.getDataType();
-		output.parameter = data.getParameter();
-		output.location = pathname.bPart();
-		output.version = pathname.fPart();
-
-		NavigableSet<EventWrapper> events = data.getEvents();
-
-		int[] times = new int[events.size()];
-		double[] values = new double[events.size()];
-		int i = 0;
-
-		for (EventWrapper event : events)
-		{
-			HecTime hecTime = fromZonedDateTime(event.getDate());
-			int time = hecTime.value();
-			times[i] = time;
-			double value = Const.UNDEFINED_DOUBLE;
-			if (event.getValue() != null)
+			String timeStep = data.getTimestep();
+			if (timeStep == null || timeStep.contains(","))
 			{
-				value = event.getValue();
+				throw new MerlinInvalidTimestepException(timeStep, data.getSeriesId());
 			}
-			values[i] = value;
 
-			i++;
-		}
+			DSSPathname pathname = new DSSPathname(data.getSeriesId());
+			pathname.setAPart(data.getProject());
+			pathname.setBPart(data.getStation() + "-" + data.getSensor());
+			pathname.setCPart(data.getParameter());
+			String fPart = pathname.getFPart();
 
-		output.values = values;
-		output.times = times;
-		output.numberValues = values.length;
-
-		HecTime startTime = fromZonedDateTime(data.getStartTime());
-		HecTime endTime = fromZonedDateTime(data.getEndTime());
-		output.startTime = times[0];
-		output.startHecTime = startTime;
-		output.endTime = times[times.length - 1];
-		output.endHecTime = endTime;
-		try
-		{
-			String unitsTo = Units.getUnitsInUnitSystem(unitSystemToConvertTo, data.getUnits());
-			String unitsFrom = data.getUnits();
-			if(!unitsFrom.equalsIgnoreCase(unitsTo))
+			int parsedInterval = Integer.parseInt(data.getTimestep());
+			String interval = HecTimeSeriesBase.getEPartFromInterval(parsedInterval);
+			pathname.setFPart(fPart);
+			if (fPartOverride != null)
 			{
-				if(progressListener != null)
+				pathname.setFPart(fPartOverride);
+			}
+			String path = "/" + pathname.getAPart() + "/" + pathname.getBPart() + "/" +
+					pathname.getCPart() + "//" + interval + "/" + pathname.getFPart() + "/";
+			int convertToUnitSystem = Unit.UNDEF_ID;
+			if (Unit.ENGLISH.equalsIgnoreCase(unitSystemToConvertTo))
+			{
+				convertToUnitSystem = Unit.ENGLISH_ID;
+			}
+			else if (Unit.SI.equalsIgnoreCase(unitSystemToConvertTo))
+			{
+				convertToUnitSystem = Unit.SI_ID;
+			}
+			output.fullName = path;
+			output.timeZoneID = data.getTimeZone().getId();
+			output.units = data.getUnits();
+			output.interval = parsedInterval;
+			output.type = data.getDataType();
+			output.parameter = data.getParameter();
+			output.location = pathname.bPart();
+			output.version = pathname.fPart();
+
+			NavigableSet<EventWrapper> events = data.getEvents();
+
+			int[] times = new int[events.size()];
+			double[] values = new double[events.size()];
+			int i = 0;
+
+			for (EventWrapper event : events)
+			{
+				HecTime hecTime = fromZonedDateTime(event.getDate());
+				int time = hecTime.value();
+				times[i] = time;
+				double value = Const.UNDEFINED_DOUBLE;
+				if (event.getValue() != null)
 				{
-					progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
+					value = event.getValue();
 				}
-				logger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
-				Units.convertUnits(output, convertToUnitSystem);
+				values[i] = value;
+
+				i++;
 			}
 
-		}
-		catch (UnitsConversionException e)
-		{
-			logger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
+			output.values = values;
+			output.times = times;
+			output.numberValues = values.length;
+
+			HecTime startTime = fromZonedDateTime(data.getStartTime());
+			HecTime endTime = fromZonedDateTime(data.getEndTime());
+			output.startTime = times[0];
+			output.startHecTime = startTime;
+			output.endTime = times[times.length - 1];
+			output.endHecTime = endTime;
+			try
+			{
+				String unitsTo = Units.getUnitsInUnitSystem(unitSystemToConvertTo, data.getUnits());
+				String unitsFrom = data.getUnits();
+				if (!unitsFrom.equalsIgnoreCase(unitsTo))
+				{
+					if (progressListener != null)
+					{
+						progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
+					}
+					logFileLogger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
+					Units.convertUnits(output, convertToUnitSystem);
+				}
+			}
+			catch (UnitsConversionException e)
+			{
+				logFileLogger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
+				LOGGER.log(Level.CONFIG, e, () -> "Failed to determine units to convert to");
+				output = null;
+			}
 		}
 		return output;
 	}
