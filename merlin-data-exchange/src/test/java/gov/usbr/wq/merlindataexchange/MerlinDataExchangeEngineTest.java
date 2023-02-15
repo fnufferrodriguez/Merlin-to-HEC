@@ -13,7 +13,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,17 +29,19 @@ final class MerlinDataExchangeEngineTest
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
+        Path mockXml2 = getMockXml("merlin_mock_dx.xml");
+        List<Path> mocks = Arrays.asList(mockXml2);
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
-        MerlinDataExchangeParameters params = new MerlinDataExchangeParameters(username, password, workingDir, start, end, storeOption, "fPart");
+        MerlinDataExchangeParameters params = new MerlinDataExchangeParameters(username, password, workingDir, workingDir, start, end, storeOption, "fPart");
         String lookupPath = DataExchangeEngine.LOOKUP_PATH + "/" + MerlinDataExchangeEngine.MERLIN;
         Lookup lookup = Lookups.forPath(lookupPath);
         DataExchangeEngine dataExchangeEngine = lookup.lookup(DataExchangeEngine.class);
         assertNotNull(dataExchangeEngine);
         ProgressListener progressListener = buildMockProgressListener();
-        dataExchangeEngine.runExtract(Collections.singletonList(mockXml), params, progressListener).join();
+        dataExchangeEngine.runExtract(mocks, params, progressListener).join();
     }
 
     @Test
@@ -49,7 +53,7 @@ final class MerlinDataExchangeEngineTest
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
-        MerlinDataExchangeParameters params = new MerlinDataExchangeParameters(username, password, workingDir, start, end, storeOption, "fPart");
+        MerlinDataExchangeParameters params = new MerlinDataExchangeParameters(username, password, workingDir, workingDir, start, end, storeOption, "fPart");
         String lookupPath = DataExchangeEngine.LOOKUP_PATH + "/" + MerlinDataExchangeEngine.MERLIN;
         Lookup lookup = Lookups.forPath(lookupPath);
         DataExchangeEngine dataExchangeEngine = lookup.lookup(DataExchangeEngine.class);

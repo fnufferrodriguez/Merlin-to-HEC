@@ -1,5 +1,9 @@
 package gov.usbr.wq.merlindataexchange;
 
+import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
+import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
+import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLStreamException;

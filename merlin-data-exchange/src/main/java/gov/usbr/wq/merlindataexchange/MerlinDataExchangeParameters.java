@@ -15,55 +15,62 @@ public final class MerlinDataExchangeParameters
     private final StoreOption _storeOption;
     private final String _fPartOverride;
     private final Path _watershedDirectory;
+    private final Path _logFileDirectory;
 
-    public MerlinDataExchangeParameters(String username, char[] password, Path watershedDirectory, Instant start, Instant end,
+    public MerlinDataExchangeParameters(String username, char[] password, Path watershedDirectory, Path logFileDirectory, Instant start, Instant end,
                                         StoreOption storeOption, String fPartOverride)
     {
         _username = username;
         _password = password;
         _watershedDirectory = watershedDirectory;
+        _logFileDirectory = logFileDirectory;
         _start = start;
         _end = end;
         _storeOption = storeOption;
         _fPartOverride = fPartOverride;
     }
 
-    String getUsername()
+    public String getUsername()
     {
         return _username;
     }
 
-    char[] getPassword()
+    public char[] getPassword()
     {
         return _password;
     }
 
-    Instant getStart()
+    public Instant getStart()
     {
         return _start;
     }
 
-    Instant getEnd()
+    public Instant getEnd()
     {
         return _end;
     }
 
-    StoreOption getStoreOption()
+    public StoreOption getStoreOption()
     {
         return _storeOption;
     }
 
-    String getFPartOverride()
+    public String getFPartOverride()
     {
         return _fPartOverride;
     }
 
-    Path getWatershedDirectory()
+    public Path getWatershedDirectory()
     {
         return _watershedDirectory;
     }
 
-    void clearPassword()
+    public Path getLogFileDirectory()
+    {
+        return _logFileDirectory;
+    }
+
+    public void clearPassword()
     {
         Arrays.fill(_password, '\0');
     }

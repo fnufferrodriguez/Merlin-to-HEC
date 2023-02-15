@@ -3,7 +3,7 @@ package gov.usbr.wq.merlindataexchange;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-final class MerlinThreadFactory implements ThreadFactory
+public final class MerlinThreadFactory implements ThreadFactory
 {
 
     private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
@@ -11,7 +11,7 @@ final class MerlinThreadFactory implements ThreadFactory
     private final AtomicInteger _threadNumber = new AtomicInteger(1);
     private final String _namePrefix;
 
-    MerlinThreadFactory()
+    public MerlinThreadFactory()
     {
         _group = Thread.currentThread().getThreadGroup();
         _namePrefix = "merlin-" +

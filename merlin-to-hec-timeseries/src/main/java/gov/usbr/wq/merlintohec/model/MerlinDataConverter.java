@@ -35,14 +35,13 @@ import java.util.logging.Logger;
  */
 final class MerlinDataConverter
 {
-
-	private static final Logger LOGGER = Logger.getLogger(MerlinDataConverter.class.getName());
 	private MerlinDataConverter()
 	{
 		throw new AssertionError("This utility class is not intended to be instantiated.");
 	}
 
-	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener) throws MerlinInvalidTimestepException
+	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logger)
+			throws MerlinInvalidTimestepException
 	{
 		if (data.getEvents().isEmpty())
 		{
@@ -129,14 +128,14 @@ final class MerlinDataConverter
 				{
 					progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
 				}
-				LOGGER.fine(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
+				logger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
 				Units.convertUnits(output, convertToUnitSystem);
 			}
 
 		}
 		catch (UnitsConversionException e)
 		{
-			LOGGER.log(Level.WARNING, e, () -> "Failed to determine units to convert to");
+			logger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
 		}
 		return output;
 	}
@@ -151,4 +150,5 @@ final class MerlinDataConverter
 		hecTime.setTimeInMillis(instant.toEpochMilli(), offsetMinutes);
 		return hecTime;
 	}
+
 }
