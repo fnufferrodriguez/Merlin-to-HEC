@@ -26,7 +26,8 @@ final class MerlinDataExchangeEngineTest
 
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeEngineTest.class.getName());
     @Test
-    void testRunExtract() throws IOException, HttpAccessException, InterruptedException {
+    void testRunExtract() throws IOException
+    {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
@@ -149,7 +150,7 @@ final class MerlinDataExchangeEngineTest
                 {
                     LOGGER.warning(() -> s);
                 }
-                LOGGER.info(() -> "Progress: " + i + "%");
+                progress(i);
             }
 
             @Override

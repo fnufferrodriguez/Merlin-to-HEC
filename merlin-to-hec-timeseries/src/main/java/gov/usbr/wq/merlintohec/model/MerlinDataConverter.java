@@ -69,15 +69,6 @@ final class MerlinDataConverter
 			}
 			String path = "/" + pathname.getAPart() + "/" + pathname.getBPart() + "/" +
 					pathname.getCPart() + "//" + interval + "/" + pathname.getFPart() + "/";
-			int convertToUnitSystem = Unit.UNDEF_ID;
-			if (Unit.ENGLISH.equalsIgnoreCase(unitSystemToConvertTo))
-			{
-				convertToUnitSystem = Unit.ENGLISH_ID;
-			}
-			else if (Unit.SI.equalsIgnoreCase(unitSystemToConvertTo))
-			{
-				convertToUnitSystem = Unit.SI_ID;
-			}
 			output.fullName = path;
 			output.timeZoneID = data.getTimeZone().getId();
 			output.units = data.getUnits();
@@ -88,11 +79,9 @@ final class MerlinDataConverter
 			output.version = pathname.fPart();
 
 			NavigableSet<EventWrapper> events = data.getEvents();
-
 			int[] times = new int[events.size()];
 			double[] values = new double[events.size()];
 			int i = 0;
-
 			for (EventWrapper event : events)
 			{
 				HecTime hecTime = fromZonedDateTime(event.getDate());
@@ -120,26 +109,50 @@ final class MerlinDataConverter
 			output.endHecTime = endTime;
 			try
 			{
-				String unitsTo = Units.getUnitsInUnitSystem(unitSystemToConvertTo, data.getUnits());
-				String unitsFrom = data.getUnits();
-				if (!unitsFrom.equalsIgnoreCase(unitsTo))
-				{
-					if (progressListener != null)
-					{
-						progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
-					}
-					logFileLogger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
-					Units.convertUnits(output, convertToUnitSystem);
-				}
+				convertUnits(output, unitSystemToConvertTo, data, progressListener, logFileLogger);
 			}
 			catch (UnitsConversionException e)
 			{
-				logFileLogger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
-				LOGGER.log(Level.CONFIG, e, () -> "Failed to determine units to convert to");
-				output = null;
+				logUnitConversionError(e, logFileLogger, progressListener);
 			}
 		}
 		return output;
+	}
+
+	private static void logUnitConversionError(Exception e, Logger logFileLogger, ProgressListener progressListener)
+	{
+		logFileLogger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
+		LOGGER.log(Level.CONFIG, e, () -> "Failed to determine units to convert to");
+		if (progressListener != null)
+		{
+			progressListener.progress("Failed to determine units to convert to", ProgressListener.MessageType.ERROR);
+		}
+	}
+
+
+	private static void convertUnits(TimeSeriesContainer output, String unitSystemToConvertTo, DataWrapper data, ProgressListener progressListener, Logger logFileLogger)
+			throws UnitsConversionException
+	{
+		int convertToUnitSystemId = Unit.UNDEF_ID;
+		if (Unit.ENGLISH.equalsIgnoreCase(unitSystemToConvertTo))
+		{
+			convertToUnitSystemId = Unit.ENGLISH_ID;
+		}
+		else if (Unit.SI.equalsIgnoreCase(unitSystemToConvertTo))
+		{
+			convertToUnitSystemId = Unit.SI_ID;
+		}
+		String unitsTo = Units.getUnitsInUnitSystem(unitSystemToConvertTo, data.getUnits());
+		String unitsFrom = data.getUnits();
+		if (!unitsFrom.equalsIgnoreCase(unitsTo))
+		{
+			if (progressListener != null)
+			{
+				progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
+			}
+			logFileLogger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
+			Units.convertUnits(output, convertToUnitSystemId);
+		}
 	}
 
 	static HecTime fromZonedDateTime(ZonedDateTime zonedDateTime)

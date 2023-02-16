@@ -1,6 +1,5 @@
 package gov.usbr.wq.merlindataexchange.io;
 
-import gov.usbr.wq.dataaccess.jwt.TokenContainer;
 import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeDaoCompletionTracker;

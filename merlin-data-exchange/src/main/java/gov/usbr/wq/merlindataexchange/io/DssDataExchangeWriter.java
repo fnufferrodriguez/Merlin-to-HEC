@@ -25,7 +25,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     }
 
     @Override
-    public void writeData(TimeSeriesContainer timeSeriesContainer, String seriesPath, MerlinDataExchangeParameters runtimeParameters, MerlinExchangeDaoCompletionTracker completionTracker,
+    public synchronized void writeData(TimeSeriesContainer timeSeriesContainer, String seriesPath, MerlinDataExchangeParameters runtimeParameters, MerlinExchangeDaoCompletionTracker completionTracker,
                           ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
     {
         StoreOption storeOption = runtimeParameters.getStoreOption();
@@ -39,7 +39,8 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             if(success == 0)
             {
                 String successMsg = "Measure (" + seriesPath + ") successfully written to DSS! DSS Pathname: " + timeSeriesContainer.fullName;
-                progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, completionTracker.writeTaskCompleted());
+                int percentComplete = completionTracker.writeTaskCompleted();
+                progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, percentComplete);
                 logFileLogger.info(() -> successMsg);
                 LOGGER.config(() -> successMsg);
             }

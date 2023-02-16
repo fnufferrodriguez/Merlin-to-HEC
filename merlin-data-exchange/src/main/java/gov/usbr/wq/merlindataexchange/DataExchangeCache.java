@@ -1,19 +1,20 @@
 package gov.usbr.wq.merlindataexchange;
 
-import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class DataExchangeCache
 {
-    private final List<TemplateWrapper> _cachedTemplates = new ArrayList<>();
-    private final List<QualityVersionWrapper> _cachedQualityVersions = new ArrayList<>();
-    private final Map<TemplateWrapper, List<MeasureWrapper>> _cachedTemplateToMeasurements = new HashMap<>();
+    private final Set<TemplateWrapper> _cachedTemplates = new HashSet<>();
+    private final Set<QualityVersionWrapper> _cachedQualityVersions = new HashSet<>();
+    private final Map<TemplateWrapper, List<String>> _cachedTemplateToSeriesIds = new HashMap<>();
 
     public List<TemplateWrapper> getCachedTemplates()
     {
@@ -25,9 +26,9 @@ public final class DataExchangeCache
         return new ArrayList<>(_cachedQualityVersions);
     }
 
-    public Map<TemplateWrapper, List<MeasureWrapper>> getCachedTemplateToMeasurements()
+    public Map<TemplateWrapper, List<String>> getCachedTemplateToSeriesIds()
     {
-        return new HashMap<>(_cachedTemplateToMeasurements);
+        return new HashMap<>(_cachedTemplateToSeriesIds);
     }
 
     public void cacheTemplates(List<TemplateWrapper> templates)
@@ -35,20 +36,20 @@ public final class DataExchangeCache
         _cachedTemplates.addAll(templates);
     }
 
-    public void cachedQualityVersions(List<QualityVersionWrapper> qualityVersions)
+    public void cacheQualityVersions(List<QualityVersionWrapper> qualityVersions)
     {
         _cachedQualityVersions.addAll(qualityVersions);
     }
-    public void cacheMeasures(TemplateWrapper template, List<MeasureWrapper> measures)
+    public void cacheSeriesIds(TemplateWrapper template, List<String> seriesIds)
     {
-        _cachedTemplateToMeasurements.put(template, measures);
+        _cachedTemplateToSeriesIds.put(template, seriesIds);
     }
 
     public void clearCache()
     {
         _cachedTemplates.clear();
         _cachedQualityVersions.clear();
-        _cachedTemplateToMeasurements.clear();
+        _cachedTemplateToSeriesIds.clear();
     }
 
 }

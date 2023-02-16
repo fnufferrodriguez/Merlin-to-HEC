@@ -1,9 +1,10 @@
 package gov.usbr.wq.merlindataexchange.io;
 
 import gov.usbr.wq.dataaccess.MerlinTimeSeriesDataAccess;
+import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
 import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.HttpAccessUtils;
-import gov.usbr.wq.dataaccess.jwt.TokenContainer;
+import gov.usbr.wq.dataaccess.http.TokenContainer;
 import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapperBuilder;
@@ -69,7 +70,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             TimeSeriesContainer retVal = null;
             try
             {
-                _token = generateNewTokenIfNecessary(runtimeParameters.getUsername(), runtimeParameters.getPassword());
+                _token = generateNewTokenIfNecessary(new ApiConnectionInfo(_sourcePath), runtimeParameters.getUsername(), runtimeParameters.getPassword());
                 DataWrapper data = retrieveDataWithUpdatedTimeWindow(start, end, seriesPath, qualityVersionId,
                         completionTracker, progressListener, logFileLogger, isCancelled);
                 if(!isCancelled.get())
@@ -105,11 +106,11 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         return retVal;
     }
 
-    private TokenContainer generateNewTokenIfNecessary(String username, char[] password) throws HttpAccessException
+    private TokenContainer generateNewTokenIfNecessary(ApiConnectionInfo connectionInfo, String username, char[] password) throws HttpAccessException
     {
-        if(_token == null || !_token.isValid())
+        if(_token == null || _token.isExpired())
         {
-            _token = HttpAccessUtils.authenticate(username, password);
+            _token = HttpAccessUtils.authenticate(connectionInfo, username, password);
         }
         return _token;
     }
@@ -137,10 +138,12 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             try
             {
                 MeasureWrapper measure = new MeasureWrapperBuilder().withSeriesString(seriesPath).build();
-                retVal = access.getEventsBySeries(_token, measure, qualityVersionId, start, end);
+                retVal = access.getEventsBySeries(new ApiConnectionInfo(_sourcePath), _token, measure, qualityVersionId, start, end);
                 String progressMsg = "Successfully retrieved data for " + measure.getSeriesString() + " with " + retVal.getEvents().size() + " events!";
+                int percentComplete = completionTracker.readTaskCompleted();
                 logFileLogger.info(() -> progressMsg);
-                progressListener.progress(progressMsg, MessageType.IMPORTANT, completionTracker.readTaskCompleted());
+                progressListener.progress(progressMsg, MessageType.IMPORTANT, percentComplete);
+
             }
             catch (IOException | HttpAccessException ex)
             {

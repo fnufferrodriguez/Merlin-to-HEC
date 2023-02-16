@@ -2,7 +2,7 @@
 <data-exchange-configuration xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance">
     <datastore id="www.grabdata2.com">
         <datastore-type>merlin</datastore-type>
-        <path>https://www.grabdata2.com/merlinwebservice</path>
+        <path>https://www.grabdata2.com</path>
     </datastore>
     <datastore id="wat">
         <datastore-type>dss</datastore-type>
