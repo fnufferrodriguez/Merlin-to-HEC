@@ -188,9 +188,9 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             DataExchangeConfiguration dataExchangeConfiguration = entry.getValue();
             setLogHandlerForConfig(configPath, runtimeParameters.getLogFileDirectory());
             extractConfiguration(dataExchangeConfiguration, runtimeParameters);
-            String errorMessage = "Finished extract for " + configPath;
-            LOG_FILE_LOGGER.info(errorMessage);
-            _progressListener.progress(errorMessage, MessageType.IMPORTANT);
+            String logMessage = "Finished extract for " + configPath;
+            LOG_FILE_LOGGER.info(logMessage);
+            _progressListener.progress(logMessage, MessageType.IMPORTANT);
         }
     }
 
