@@ -16,7 +16,6 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeDao;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeDaoFactory;
 import hec.ui.ProgressListener;
 import hec.ui.ProgressListener.MessageType;
-import rma.services.annotations.ServiceProvider;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.FileOutputStream;
@@ -116,9 +115,8 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 for(ApiConnectionInfo connectionInfo : merlinRoots)
                 {
                     TokenContainer token = HttpAccessUtils.authenticate(connectionInfo, runtimeParameters.getUsername(), runtimeParameters.getPassword());
-                    initializeCachePerUrl(parsedConfiguartions, runtimeParameters.getLogFileDirectory(), connectionInfo, token);
+                    initializeCacheForMerlin(parsedConfiguartions, runtimeParameters.getLogFileDirectory(), connectionInfo, token);
                 }
-                //here we could also initialize a cache with a dss path if we reverse the direction in future to read from DSS and write to Merlin
                 if(!_isCancelled.get())
                 {
                     extractUsingInitializedCache(parsedConfiguartions, runtimeParameters);
@@ -474,7 +472,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         return retVal;
     }
 
-    private void initializeCachePerUrl(Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory, ApiConnectionInfo connectionInfo, TokenContainer token)
+    private void initializeCacheForMerlin(Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory, ApiConnectionInfo connectionInfo, TokenContainer token)
             throws IOException, HttpAccessException
     {
 
@@ -493,17 +491,17 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             logProgress("Successfully retrieved " + qualityVersions.size() + " quality versions.", (int) (PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP * 0.6));
             if(!_isCancelled.get())
             {
-                initializeCachedMeasurementsPerUrl(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
+                initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
             }
         }
         else
         {
-            initializeCachedMeasurementsPerUrl(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
+            initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
         }
     }
 
-    private void initializeCachedMeasurementsPerUrl(DataExchangeCache cache, Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory,
-                                                    ApiConnectionInfo connectionInfo, TokenContainer token)
+    private void initializeCachedMeasurementsForMerlin(DataExchangeCache cache, Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory,
+                                                       ApiConnectionInfo connectionInfo, TokenContainer token)
     {
         for(Map.Entry<Path, DataExchangeConfiguration> entry : parsedConfigurations.entrySet())
         {
