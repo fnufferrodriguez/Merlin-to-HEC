@@ -1,7 +1,7 @@
 package gov.usbr.wq.merlindataexchange.io;
 
-import com.rma.io.DssFileManager;
 import com.rma.io.DssFileManagerImpl;
+import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeDaoCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
@@ -21,33 +21,41 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
 {
     public static final String DSS = "dss";
     private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
-    private DssFileManager _dssFileManager;
     private Path _dssWritePath;
 
     @Override
-    public synchronized void writeData(TimeSeriesContainer timeSeriesContainer, String seriesPath, MerlinParameters runtimeParameters,
+    public synchronized void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper seriesPath, MerlinParameters runtimeParameters,
                                        MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
     {
         StoreOption storeOption = runtimeParameters.getStoreOption();
         if(timeSeriesContainer != null && !isCancelled.get())
         {
             String successfulConversionMsg = "Successfully converted Measure Measure (" + seriesPath + ") to timeseries! Writing timeseries to " + _dssWritePath;
-            progressListener.progress(successfulConversionMsg, ProgressListener.MessageType.IMPORTANT);
+            if(progressListener != null)
+            {
+                progressListener.progress(successfulConversionMsg, ProgressListener.MessageType.IMPORTANT);
+            }
             logFileLogger.info(() -> successfulConversionMsg);
             timeSeriesContainer.fileName = _dssWritePath.toString();
-            int success = _dssFileManager.writeTS(timeSeriesContainer, storeOption);
+            int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
             if(success == 0)
             {
                 String successMsg = "Measure (" + seriesPath + ") successfully written to DSS! DSS Pathname: " + timeSeriesContainer.fullName;
                 int percentComplete = completionTracker.writeTaskCompleted();
-                progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, percentComplete);
+                if(progressListener != null)
+                {
+                    progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, percentComplete);
+                }
                 logFileLogger.info(() -> successMsg);
                 LOGGER.config(() -> successMsg);
             }
             else
             {
                 String failMsg = "Failed to write Measure (" +  seriesPath + ") to DSS! Error status code: " + success;
-                progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
+                if(progressListener != null)
+                {
+                    progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
+                }
                 logFileLogger.severe(() -> failMsg);
                 LOGGER.config(() -> failMsg);
             }
@@ -57,14 +65,13 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     @Override
     public void initialize(DataStore dataStore, MerlinParameters parameters)
     {
-        _dssFileManager = DssFileManagerImpl.getDssFileManager();
         _dssWritePath = buildAbsoluteDssWritePath(dataStore.getPath(), parameters.getWatershedDirectory());
     }
 
     @Override
     public void close()
     {
-        _dssFileManager.close(_dssWritePath.toString());
+        DssFileManagerImpl.getDssFileManager().close(_dssWritePath.toString());
     }
 
     @Override

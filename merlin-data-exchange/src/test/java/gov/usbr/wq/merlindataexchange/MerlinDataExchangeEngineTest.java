@@ -31,8 +31,8 @@ final class MerlinDataExchangeEngineTest
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
-        Path mockXml2 = getMockXml("merlin_mock_dx.xml");
-        List<Path> mocks = Arrays.asList(mockXml);
+        Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
+        List<Path> mocks = Arrays.asList(mockXml, mockXml2);
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");

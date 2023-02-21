@@ -1,5 +1,6 @@
 package gov.usbr.wq.merlindataexchange.io;
 
+import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeDaoCompletionTracker;
@@ -19,18 +20,18 @@ public final class DataExchangeIO
     }
 
     public static CompletableFuture<Void> exchangeData(DataExchangeReader reader, DataExchangeWriter writer, DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters,
-                                                DataExchangeCache cache, String seriesPath, MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener,
-                                                AtomicBoolean isCancelled, Logger logger, ExecutorService executorService)
+                                                       DataExchangeCache cache, MeasureWrapper measure, MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener,
+                                                       AtomicBoolean isCancelled, Logger logger, ExecutorService executorService)
     {
         CompletableFuture<Void> retVal = new CompletableFuture<>();
         if(!isCancelled.get())
         {
             logProgress(progressListener, logger, "Source path: " + reader.getSourcePath());
             logProgress(progressListener, logger, "Destination path: " + writer.getDestinationPath());
-            retVal = reader.readData(dataExchangeSet, runtimeParameters, cache, seriesPath,
+            retVal = reader.readData(dataExchangeSet, runtimeParameters, cache, measure,
                             completionTracker, progressListener, isCancelled, logger, executorService)
                     .thenAcceptAsync(tsc ->
-                        writer.writeData(tsc, seriesPath, runtimeParameters, completionTracker, progressListener, logger, isCancelled), executorService);
+                        writer.writeData(tsc, measure, runtimeParameters, completionTracker, progressListener, logger, isCancelled), executorService);
 
 
         }

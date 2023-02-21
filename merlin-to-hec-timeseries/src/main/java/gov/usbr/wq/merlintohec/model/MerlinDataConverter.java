@@ -67,9 +67,10 @@ final class MerlinDataConverter
 			{
 				pathname.setFPart(fPartOverride);
 			}
-			String path = "/" + pathname.getAPart() + "/" + pathname.getBPart() + "/" +
-					pathname.getCPart() + "//" + interval + "/" + pathname.getFPart() + "/";
-			output.fullName = path;
+			pathname._delimiter = "/";
+			pathname.setEPart("" + interval);
+			pathname.setDPart("");
+			output.fullName = pathname.getPathname();
 			output.timeZoneID = data.getTimeZone().getId();
 			output.units = data.getUnits();
 			output.interval = parsedInterval;

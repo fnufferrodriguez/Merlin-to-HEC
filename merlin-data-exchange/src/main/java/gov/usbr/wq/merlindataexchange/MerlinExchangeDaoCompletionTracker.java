@@ -3,16 +3,20 @@ package gov.usbr.wq.merlindataexchange;
 public final class MerlinExchangeDaoCompletionTracker
 {
     private static final int TASKS_TO_PERFORM_PER_MEASURE = 2; //1 for read and 1 for write
-    private final int _numberOfMeasuresToComplete;
+    private int _numberOfMeasuresToComplete;
     private final int _percentCompleteBeforeReadAndWrite;
     private int _totalCompleted = 0;
     private int _writesCompleted = 0;
     private int _readsCompleted = 0;
 
-    public MerlinExchangeDaoCompletionTracker(int numberOfMeasuresToComplete, int percentCompleteBeforeReadAndWrite)
+    public MerlinExchangeDaoCompletionTracker(int percentCompleteBeforeReadAndWrite)
     {
-        _numberOfMeasuresToComplete = numberOfMeasuresToComplete;
         _percentCompleteBeforeReadAndWrite = percentCompleteBeforeReadAndWrite;
+    }
+
+    public void addNumberOfMeasuresToComplete(int numberToAdd)
+    {
+        _numberOfMeasuresToComplete += numberToAdd;
     }
 
     private int readWriteTaskCompleted()
