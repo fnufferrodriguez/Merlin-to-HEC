@@ -300,6 +300,10 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 {
                     successMsg = "Extract Completed Partially";
                 }
+                else if (_completionTracker.getCompletionStatus() == MerlinDataExchangeStatus.FAILURE)
+                {
+                    successMsg = "Extract Failed";
+                }
                 logProgress(successMsg);
             }
             if(_progressListener != null)
