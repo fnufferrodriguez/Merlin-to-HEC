@@ -439,6 +439,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             _progressListener.progress(message, MessageType.IMPORTANT);
         }
+        LOGGER.fine(() -> message);
     }
 
     private void logProgress(String message, int progressPercentage)
@@ -447,6 +448,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             _progressListener.progress(message, MessageType.IMPORTANT, progressPercentage);
         }
+        LOGGER.fine(() -> message);
     }
 
     private void logError(String message, Throwable error)
