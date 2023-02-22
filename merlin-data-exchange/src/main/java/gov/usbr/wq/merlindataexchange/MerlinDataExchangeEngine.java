@@ -127,7 +127,19 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             {
                 setUpLoggingForConfigs(parsedConfiguartions, _runtimeParameters.getLogFileDirectory());
                 String performedOnMsg = "Extract Performed on: " + Instant.now().toString();
-                String timeWindowMsg = "Time Window: " + _runtimeParameters.getStart().toString() + " | " + _runtimeParameters.getEnd().toString();
+                String startStr = "NULL";
+                Instant start = _runtimeParameters.getStart();
+                if(start != null)
+                {
+                    startStr = start.toString();
+                }
+                String endStr = "NULL";
+                Instant end = _runtimeParameters.getStart();
+                if(end != null)
+                {
+                    endStr = end.toString();
+                }
+                String timeWindowMsg = "Time Window: " + startStr + " | " + endStr;
                 _fileLoggers.values().forEach(logger ->
                 {
                     logger.logToHeader(performedOnMsg);
