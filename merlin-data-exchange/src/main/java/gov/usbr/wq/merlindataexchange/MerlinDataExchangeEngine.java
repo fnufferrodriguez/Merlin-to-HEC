@@ -27,9 +27,8 @@ import hec.ui.ProgressListener.MessageType;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,12 +40,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toList;
 
@@ -56,8 +51,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     private static final int PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP = 5;
     private static final int THREAD_COUNT = 5;
     private static final String THREAD_PROPERTY_KEY = "merlin.dataexchange.threadpool.size";
-    private static final Pattern LOG_PATTERN = Pattern.compile(".log$");
-    private final Logger _logFileLogger = Logger.getLogger(getClass().getName() + hashCode());
     private final ExecutorService _executorService = Executors.newFixedThreadPool(getThreadPoolSize(), new MerlinThreadFactory());
     private final Map<ApiConnectionInfo, DataExchangeCache> _dataExchangeCache = new HashMap<>();
     private final MerlinTimeSeriesDataAccess _merlinDataAccess = new MerlinTimeSeriesDataAccess();
@@ -65,8 +58,8 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     private final List<Path> _configurationFiles;
     private final MerlinParameters _runtimeParameters;
     private final ProgressListener _progressListener;
-    private final MerlinExchangeDaoCompletionTracker _completionTracker = new MerlinExchangeDaoCompletionTracker(PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP);
-    private final Map<String, Handler> _fileHandlers = new HashMap<>();
+    private final MerlinExchangeCompletionTracker _completionTracker = new MerlinExchangeCompletionTracker(PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP);
+    private final Map<Path, MerlinDataExchangeLogger> _fileLoggers = new HashMap<>();
     private CompletableFuture<MerlinDataExchangeStatus> _extractFuture;
 
     MerlinDataExchangeEngine(List<Path> configurationFiles, MerlinParameters runtimeParameters, ProgressListener progressListener)
@@ -122,10 +115,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     public void cancelExtract()
     {
         _isCancelled.set(true);
-        if(_progressListener != null)
-        {
-            logProgress("Merlin Data Exchanged Cancelled. Finishing gracefully...");
-        }
+        logProgress("Merlin Data Exchanged Cancelled. Finishing gracefully...");
     }
 
     private CompletableFuture<MerlinDataExchangeStatus> beginExtract(Map<Path, DataExchangeConfiguration> parsedConfiguartions)
@@ -136,7 +126,16 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             try
             {
                 setUpLoggingForConfigs(parsedConfiguartions, _runtimeParameters.getLogFileDirectory());
-                logProgress("Setting up extract for all configs");
+                String performedOnMsg = "Extract Performed on: " + Instant.now().toString();
+                String timeWindowMsg = "Time Window: " + _runtimeParameters.getStart().toString() + " | " + _runtimeParameters.getEnd().toString();
+                _fileLoggers.values().forEach(logger ->
+                {
+                    logger.logToHeader(performedOnMsg);
+                    logger.logToHeader(timeWindowMsg);
+                });
+                logProgress(performedOnMsg);
+                logProgress(timeWindowMsg);
+                logProgress("Setting up extract for all configs...");
                 List<ApiConnectionInfo> merlinRoots = getMerlinUrlPaths(parsedConfiguartions.values());
                 for(ApiConnectionInfo connectionInfo : merlinRoots)
                 {
@@ -144,21 +143,51 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 }
                 if(!_isCancelled.get())
                 {
-                    logProgress("Setup complete for all configs");
+                    logProgress("Setup complete!");
+                    logProgress("Running Full Extract...");
                     extractUsingInitializedCache(parsedConfiguartions);
                 }
                 finish();
                 retVal = _completionTracker.getCompletionStatus();
             }
+            catch (UnsupportedTemplateException e)
+            {
+                String errorMsg = "Setup Failed: " + e.getMessage();
+                logError(errorMsg, e);
+                MerlinDataExchangeLogBody bodyWithError = new MerlinDataExchangeLogBody();
+                bodyWithError.log(errorMsg);
+                _fileLoggers.values().forEach(logger -> logger.logBody(bodyWithError));
+            }
             catch (IOException e)
             {
                 logError("Failed to initialize templates, quality versions, and measures cache", e);
+                MerlinDataExchangeLogBody bodyWithError = new MerlinDataExchangeLogBody();
+                bodyWithError.log("Error Occurred: " + e.getMessage());
+                _fileLoggers.values().forEach(logger -> logger.logBody(bodyWithError));
             }
+            logCompletion(retVal);
+            _fileLoggers.values().forEach(MerlinDataExchangeLogger::writeLog);
             return retVal;
         }, _executorService);
     }
 
-    private void initializeCacheForMerlinUrl(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions) throws IOException
+    private void logCompletion(MerlinDataExchangeStatus retVal)
+    {
+        if(retVal == MerlinDataExchangeStatus.PARTIAL_SUCCESS)
+        {
+            _fileLoggers.values().forEach(logger -> logger.logToFooter("Extract Completed Partially"));
+        }
+        else if(retVal == MerlinDataExchangeStatus.COMPLETE_SUCCESS)
+        {
+            _fileLoggers.values().forEach(logger -> logger.logToFooter("Extract Completed!"));
+        }
+        else
+        {
+            _fileLoggers.values().forEach(logger -> logger.logToFooter("Extract Failed!"));
+        }
+    }
+
+    private void initializeCacheForMerlinUrl(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions) throws IOException, UnsupportedTemplateException
     {
         try
         {
@@ -173,12 +202,12 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     }
 
     private void initializeCacheForMerlinUrlWithAuthentication(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions, UsernamePasswordHolder usernamePassword)
-            throws IOException
+            throws IOException, UnsupportedTemplateException
     {
         try
         {
             TokenContainer token = HttpAccessUtils.authenticate(connectionInfo, usernamePassword.getUsername(), usernamePassword.getPassword());
-            initializeCacheForMerlinWithToken(parsedConfiguartions, _runtimeParameters.getLogFileDirectory(), connectionInfo, token);
+            initializeCacheForMerlinWithToken(parsedConfiguartions, connectionInfo, token);
         }
         catch (HttpAccessException e)
         {
@@ -230,11 +259,17 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         for(Map.Entry<Path, DataExchangeConfiguration> entry : parsedConfiguartions.entrySet())
         {
             Path configPath = entry.getKey();
-            DataExchangeConfiguration dataExchangeConfiguration = entry.getValue();
-            specifyLogHandlerToUseForConfig(configPath, _runtimeParameters.getLogFileDirectory());
-            extractConfiguration(dataExchangeConfiguration);
-            String logMessage = "Finished extract for " + configPath;
+            MerlinDataExchangeLogger logFileLogger = _fileLoggers.get(configPath);
+            String logMessage = "Running Extract for config: " + configPath;
             logProgress(logMessage);
+            MerlinDataExchangeLogBody logBody = new MerlinDataExchangeLogBody();
+            logBody.log(logMessage);
+            DataExchangeConfiguration dataExchangeConfiguration = entry.getValue();
+            extractConfiguration(dataExchangeConfiguration, logBody);
+            String finishedMsg = "Finished extract for config";
+            logBody.log(finishedMsg);
+            logFileLogger.logBody(logBody);
+            logProgress(finishedMsg);
         }
     }
 
@@ -248,7 +283,12 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             }
             else
             {
-                logProgress("Merlin Data Exchange Complete");
+                String successMsg = "Extract Complete!";
+                if(_completionTracker.getCompletionStatus() == MerlinDataExchangeStatus.PARTIAL_SUCCESS)
+                {
+                    successMsg = "Extract Completed Partially";
+                }
+                logProgress(successMsg);
             }
             if(_progressListener != null)
             {
@@ -257,11 +297,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }
         finally
         {
-            for(Handler h: _fileHandlers.values())
-            {
-                h.close();
-            }
-            _fileHandlers.clear();
             _dataExchangeCache.clear();
         }
     }
@@ -274,7 +309,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         return retVal;
     }
 
-    private void extractConfiguration(DataExchangeConfiguration dataExchangeConfig)
+    private void extractConfiguration(DataExchangeConfiguration dataExchangeConfig, MerlinDataExchangeLogBody logBody)
     {
         if (dataExchangeConfig != null)
         {
@@ -283,64 +318,23 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             {
                 if(!_isCancelled.get())
                 {
-                    exchangeDataForSet(dataExchangeSet, dataExchangeConfig);
+                    exchangeDataForSet(dataExchangeSet, dataExchangeConfig, logBody);
                 }
             });
         }
     }
 
-    private void specifyLogHandlerToUseForConfig(Path configPath, Path logDirectory)
-    {
-        String configNameWithoutExtension = configPath.getFileName().toString().split("\\.")[0];
-        Path logFile = logDirectory.resolve(configNameWithoutExtension + ".log");
-        _logFileLogger.setUseParentHandlers(false);
-        if (_logFileLogger.getHandlers().length > 0)
-        {
-            for(int i = _logFileLogger.getHandlers().length -1; i >= 0; i--)
-            {
-                _logFileLogger.removeHandler(_logFileLogger.getHandlers()[i]);
-            }
-        }
-        //we only want the log handler for this config specified. We remove the other handlers, but keep a reference them still in the _fileHandlers list
-        Handler fileHandler = _fileHandlers.get(logFile.toString());
-        _logFileLogger.addHandler(fileHandler);
-        SimpleFormatter formatter = new SimpleFormatter();
-        fileHandler.setFormatter(formatter);
-    }
-
     private void setUpLoggingForConfigs(Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logDirectory)
     {
-        List<String> configNameWithoutExtensions = parsedConfigurations.keySet().stream().map(c -> c.getFileName().toString().split("\\.")[0])
-                .collect(toList());
-        for(String configNameWithoutExtension : configNameWithoutExtensions)
+        for(Path configPath : parsedConfigurations.keySet())
         {
+            String configNameWithoutExtension = configPath.getFileName().toString().split("\\.")[0];
             Path logFile = logDirectory.resolve(configNameWithoutExtension + ".log");
-            try
-            {
-                Files.createDirectories(logDirectory);
-                if(logFile.toFile().exists())
-                {
-                    Path bakFile = Paths.get(logFile.toString().replaceAll(LOG_PATTERN.pattern(), ".bak"));
-                    Files.deleteIfExists(bakFile);
-                    Files.copy(logFile, bakFile);
-                    Files.delete(logFile);
-                }
-                Files.createFile(logFile);
-                FileHandler fileHandler = new FileHandler(logFile.toString());
-                _fileHandlers.put(logFile.toString(), fileHandler);
-                _logFileLogger.setUseParentHandlers(false);
-                _logFileLogger.addHandler(fileHandler);
-                SimpleFormatter formatter = new SimpleFormatter();
-                fileHandler.setFormatter(formatter);
-            }
-            catch (IOException e)
-            {
-                LOGGER.log(Level.SEVERE, e, () -> "Failed to create log file: " + logFile);
-            }
+            _fileLoggers.put(configPath, new MerlinDataExchangeLogger(logFile));
         }
     }
 
-    private void exchangeDataForSet(DataExchangeSet dataExchangeSet, DataExchangeConfiguration dataExchangeConfig)
+    private void exchangeDataForSet(DataExchangeSet dataExchangeSet, DataExchangeConfiguration dataExchangeConfig, MerlinDataExchangeLogBody logBody)
     {
         DataStoreRef dataStoreRefB = dataExchangeSet.getDataStoreRefB();
         DataStoreRef dataStoreRefA = dataExchangeSet.getDataStoreRefA();
@@ -355,87 +349,71 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         Optional<DataStore> dataStoreSourceOpt = dataExchangeConfig.getDataStoreByRef(sourceRef);
         if(!dataStoreDestinationOpt.isPresent())
         {
-            String destinationRefIdId = destinationRef.getId();
-            logError("No datastore found for datastore-ref id: " + destinationRefIdId, null);
+            String msg = "No datastore found for datastore-ref id: " + destinationRef.getId();
+            logError(msg, null);
+            logBody.log("Error occurred: " + msg);
         }
         if(!dataStoreSourceOpt.isPresent())
         {
-            String destinationRefIdId = destinationRef.getId();
-            logError("No datastore found for datastore-ref id: " + destinationRefIdId, null);
+            String msg = "No datastore found for datastore-ref id: " + sourceRef.getId();
+            logError(msg, null);
+            logBody.log("Error occurred: " + msg);
         }
         if(dataStoreDestinationOpt.isPresent() && dataStoreSourceOpt.isPresent())
         {
-            exchangeData(dataExchangeConfig, dataExchangeSet, dataStoreSourceOpt.get(), dataStoreDestinationOpt.get());
+            exchangeData(dataExchangeSet, dataStoreSourceOpt.get(), dataStoreDestinationOpt.get(), logBody);
         }
     }
 
-    private String getDataStoreSourcePath(DataExchangeConfiguration dataExchangeConfig, DataExchangeSet dataExchangeSet)
+    private void exchangeData(DataExchangeSet dataExchangeSet, DataStore dataStoreSource, DataStore dataStoreDestination, MerlinDataExchangeLogBody logBody)
     {
-        DataStoreRef dataStoreRefA = dataExchangeSet.getDataStoreRefA();
-        DataStoreRef dataStoreRefB = dataExchangeSet.getDataStoreRefB();
-        DataStoreRef sourceRef = dataStoreRefA;
-        DataStoreRef destinationRef = dataStoreRefB;
-        if (dataExchangeSet.getSourceId().equalsIgnoreCase(dataStoreRefB.getId()))
+        try
         {
-            destinationRef = dataStoreRefA;
-            sourceRef = dataStoreRefB;
-        }
-        Optional<DataStore> dataStoreSourceOpt = dataExchangeConfig.getDataStoreByRef(sourceRef);
-        String retVal = "";
-        if(!dataStoreSourceOpt.isPresent())
-        {
-            String destinationRefIdId = destinationRef.getId();
-            logError("No datastore found for datastore-ref id: " + destinationRefIdId, null);
-        }
-        else
-        {
-            retVal = dataStoreSourceOpt.get().getPath();
-        }
-        return retVal;
-    }
-
-    private void exchangeData(DataExchangeConfiguration config, DataExchangeSet dataExchangeSet, DataStore dataStoreSource, DataStore dataStoreDestination)
-    {
-        TemplateWrapper template = getTemplateFromDataExchangeSet(config, dataExchangeSet);
-        if(template != null)
-        {
-            String unitSystemToConvertTo = dataExchangeSet.getUnitSystem();
-            logProgress("Specified unit system: " + unitSystemToConvertTo);
-            try
+            TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreSource);
+            if(template == null)
             {
-                DataExchangeReader reader = DataExchangeReaderFactory.lookupReader(dataStoreSource, _logFileLogger);
-                DataExchangeWriter writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination, _logFileLogger);
-                reader.initialize(dataStoreSource, _runtimeParameters);
-                writer.initialize(dataStoreDestination, _runtimeParameters);
-                String sourcePath = dataStoreSource.getPath(); //for merlin this is a URL
-                DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
-                if(cache != null)
+                template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreDestination);
+            }
+            if(template == null)
+            {
+                throw new UnsupportedTemplateException(dataExchangeSet.getTemplateName(), dataExchangeSet.getTemplateId());
+            }
+            DataExchangeReader reader = DataExchangeReaderFactory.lookupReader(dataStoreSource);
+            DataExchangeWriter writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination);
+            reader.initialize(dataStoreSource, _runtimeParameters);
+            writer.initialize(dataStoreDestination, _runtimeParameters);
+            String sourcePath = dataStoreSource.getPath(); //for merlin this is a URL
+            DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
+            if(cache != null)
+            {
+                String fromMsg = "From: " + reader.getSourcePath();
+                String toMsg = "To: " + writer.getDestinationPath();
+                logBody.log(fromMsg);
+                logBody.log(toMsg);
+                logProgress(fromMsg);
+                logProgress(toMsg);
+                logProgress("Specified quality version: " + dataExchangeSet.getQualityVersionName());
+                logProgress("Specified unit system: " + dataExchangeSet.getUnitSystem());
+                List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
+                List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
+                try
                 {
-                    List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
-                    List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
-                    try
-                    {
-                        measures.forEach(measure ->
-                                measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, cache,
-                                        measure, _completionTracker, _progressListener, _isCancelled, _logFileLogger, _executorService)));
-                        CompletableFuture.allOf(measurementFutures.toArray(new CompletableFuture[0])).join();
-                    }
-                    finally
-                    {
-                        reader.close();
-                        writer.close();
-                    }
+                    measures.forEach(measure ->
+                            measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, cache,
+                                    measure, _completionTracker, _progressListener, _isCancelled, logBody, _executorService)));
+                    CompletableFuture.allOf(measurementFutures.toArray(new CompletableFuture[0])).join();
+                }
+                finally
+                {
+                    reader.close();
+                    writer.close();
                 }
             }
-            catch (DataExchangeLookupException e)
-            {
-                logError("Lookup failed!", e);
-            }
         }
-        else
+        catch (DataExchangeLookupException | UnsupportedTemplateException e)
         {
-            String errorMsg = "Failed to find matching template ID in retrieved templates for template name " + dataExchangeSet.getTemplateName() + " or id " + dataExchangeSet.getTemplateId();
-            logError(errorMsg, null);
+            logError("Lookup failed!", e);
+            logBody.log("Error Occurred: " + e.getMessage());
         }
     }
 
@@ -445,7 +423,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             _progressListener.progress(message, MessageType.IMPORTANT);
         }
-        _logFileLogger.info(() -> message);
     }
 
     private void logProgress(String message, int progressPercentage)
@@ -454,7 +431,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             _progressListener.progress(message, MessageType.IMPORTANT, progressPercentage);
         }
-        _logFileLogger.info(() -> message);
     }
 
     private void logError(String message, Throwable error)
@@ -463,14 +439,13 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             _progressListener.progress(message, MessageType.ERROR);
         }
-        _logFileLogger.severe(() -> message);
-        if(error != null)
+        if(error == null)
         {
             LOGGER.log(Level.CONFIG, () -> message);
         }
         else
         {
-            LOGGER.log(Level.CONFIG, error, () -> message);
+            LOGGER.log(Level.CONFIG, error, () -> message + ": " + error.getMessage());
         }
     }
 
@@ -488,12 +463,12 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         return retVal;
     }
 
-    private TemplateWrapper getTemplateFromDataExchangeSet(DataExchangeConfiguration dataExchangeConfiguration, DataExchangeSet dataExchangeSet)
+    private TemplateWrapper getTemplateFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataStore dataStore)
     {
-        String sourcePath = getDataStoreSourcePath(dataExchangeConfiguration, dataExchangeSet);
+        String dataStorePath = dataStore.getPath();
         String templateNameFromSet = dataExchangeSet.getTemplateName();
         int templateIdFromSet = dataExchangeSet.getTemplateId();
-        DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
+        DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(dataStorePath));
         TemplateWrapper retVal = null;
         if(cache != null)
         {
@@ -530,8 +505,8 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         return retVal;
     }
 
-    private void initializeCacheForMerlinWithToken(Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory, ApiConnectionInfo connectionInfo, TokenContainer token)
-            throws IOException, HttpAccessException
+    private void initializeCacheForMerlinWithToken(Map<Path, DataExchangeConfiguration> parsedConfigurations, ApiConnectionInfo connectionInfo, TokenContainer token)
+            throws IOException, HttpAccessException, UnsupportedTemplateException
     {
 
         DataExchangeCache cache = _dataExchangeCache.get(connectionInfo);
@@ -539,39 +514,40 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         {
             cache = new DataExchangeCache();
             _dataExchangeCache.put(connectionInfo, cache);
-            logProgress("Retrieving templates from Merlin Web Service");
+            logProgress("Caching templates retrieved from Merlin Web Service...");
             List<TemplateWrapper> templates = _merlinDataAccess.getTemplates(connectionInfo, token);
             cache.cacheTemplates(templates);
-            logProgress("Successfully retrieved " + templates.size() + " templates.", (int) (PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP * 0.4));
-            logProgress("Retrieving quality versions from Merlin Web Service");
+            logProgress("Successfully cached " + templates.size() + " templates.", (int) (PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP * 0.4));
+            logProgress("Caching quality versions from Merlin Web Service...");
             List<QualityVersionWrapper> qualityVersions = _merlinDataAccess.getQualityVersions(connectionInfo, token);
             cache.cacheQualityVersions(qualityVersions);
-            logProgress("Successfully retrieved " + qualityVersions.size() + " quality versions.", (int) (PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP * 0.6));
+            logProgress("Successfully cached " + qualityVersions.size() + " quality versions.", (int) (PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP * 0.6));
             if(!_isCancelled.get())
             {
-                initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
+                initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, connectionInfo, token);
             }
         }
         else
         {
-            initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, logFileDirectory, connectionInfo, token);
+            initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, connectionInfo, token);
         }
     }
 
-    private void initializeCachedMeasurementsForMerlin(DataExchangeCache cache, Map<Path, DataExchangeConfiguration> parsedConfigurations, Path logFileDirectory,
-                                                       ApiConnectionInfo connectionInfo, TokenContainer token)
+    private void initializeCachedMeasurementsForMerlin(DataExchangeCache cache, Map<Path, DataExchangeConfiguration> parsedConfigurations,
+                                                       ApiConnectionInfo connectionInfo, TokenContainer token) throws UnsupportedTemplateException
     {
         logProgress("Caching measurements for templates in configs...");
         for(Map.Entry<Path, DataExchangeConfiguration> entry : parsedConfigurations.entrySet())
         {
             DataExchangeConfiguration dataExchangeConfig = entry.getValue();
             List<DataExchangeSet> exchangeSets = dataExchangeConfig.getDataExchangeSets();
-            exchangeSets.forEach(set ->
+            for(DataExchangeSet set : exchangeSets)
             {
-                TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeConfig, set);
+                TemplateWrapper template = cache.getCachedTemplates().stream()
+                        .filter(t -> t.getName().equals(set.getTemplateName()) || t.getDprId().equals(set.getTemplateId()))
+                        .findFirst()
+                        .orElseThrow(() -> new UnsupportedTemplateException(set.getTemplateName(), set.getTemplateId()));
                 boolean alreadyCached = cache.getCachedTemplateToMeasures().containsKey(template);
-                if(template != null)
-                {
                     List<MeasureWrapper> measures;
                     if(!alreadyCached)
                     {
@@ -583,8 +559,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                         measures = cache.getCachedTemplateToMeasures().get(template);
                     }
                     _completionTracker.addNumberOfMeasuresToComplete(measures.size());
-                }
-            });
+            }
         }
         logProgress("Measurements successfully cached!", PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP);
     }

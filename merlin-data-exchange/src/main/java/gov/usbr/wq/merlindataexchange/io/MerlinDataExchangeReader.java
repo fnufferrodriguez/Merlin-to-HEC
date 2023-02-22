@@ -9,8 +9,9 @@ import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.merlindataexchange.DataExchangeCache;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.MerlinExchangeDaoCompletionTracker;
+import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordNotFoundException;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
@@ -44,22 +45,15 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
 
     @Override
     public CompletableFuture<TimeSeriesContainer> readData(DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters, DataExchangeCache cache, MeasureWrapper measure,
-                                                           MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener, AtomicBoolean isCancelled,
-                                                           Logger logFileLogger, ExecutorService executorService)
+                                                           MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, AtomicBoolean isCancelled,
+                                                           MerlinDataExchangeLogBody logFileLogger, ExecutorService executorService)
     {
         Instant start = runtimeParameters.getStart();
         Instant end = runtimeParameters.getEnd();
         String fPartOverride = runtimeParameters.getFPartOverride();
-        QualityVersionWrapper qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache, logFileLogger, progressListener).orElse(null);
+        QualityVersionWrapper qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache).orElse(null);
         String unitSystemToConvertTo = dataExchangeSet.getUnitSystem();
         Integer qualityVersionId = qualityVersion == null ? null : qualityVersion.getQualityVersionID();
-        String seriesPath = measure.getSeriesString();
-        logFileLogger.info(() -> "Start time: " + start + " | End time: " + end + " | Quality version: " + qualityVersionId);
-        logFileLogger.info(() -> "Retrieving data for measure with series string: " + seriesPath + "...");
-        if(progressListener != null)
-        {
-            progressListener.progress("Retrieving data for measure with series string: " + seriesPath + "...", MessageType.IMPORTANT);
-        }
         return CompletableFuture.supplyAsync(() ->
         {
             TimeSeriesContainer retVal = null;
@@ -80,7 +74,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     }
 
     private TimeSeriesContainer retrieveDataAsTimeSeries(UsernamePasswordHolder usernamePassword, Instant start, Instant end, MeasureWrapper measure, Integer qualityVersionId,
-                                                         MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener, Logger logFileLogger,
+                                                         MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                          AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo)
     {
         TimeSeriesContainer retVal = null;
@@ -89,9 +83,26 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             _token = generateNewTokenIfNecessary(new ApiConnectionInfo(_merlinApiRoot), usernamePassword.getUsername(), usernamePassword.getPassword());
             DataWrapper data = retrieveData(start, end, measure, qualityVersionId,
                     completionTracker, progressListener, logFileLogger, isCancelled);
-            if(!isCancelled.get())
+            if(data == null)
+            {
+                String errorMsg = "Failed to retrieve data for measure: " + measure.getSeriesString();
+                if(progressListener != null)
+                {
+                    progressListener.progress(errorMsg, MessageType.ERROR);
+                }
+                logFileLogger.log(errorMsg);
+                LOGGER.config(() -> errorMsg);
+            }
+            else if(!isCancelled.get())
             {
                 retVal = convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger);
+                if(retVal != null)
+                {
+                    String progressMsg = "Successfully read Measure (" + measure.getSeriesString() + ") with " + retVal.getNumberValues() + " values";
+                    logFileLogger.log(progressMsg);
+                    int percentComplete = completionTracker.readTaskCompleted();
+                    logProgress(progressListener, logFileLogger, progressMsg, percentComplete);
+                }
             }
         }
         catch (HttpAccessException e)
@@ -102,19 +113,20 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         return retVal;
     }
 
-    private TimeSeriesContainer convertToTsc(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logFileLogger)
+    private TimeSeriesContainer convertToTsc(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger)
     {
         TimeSeriesContainer retVal = null;
         try
         {
-            retVal = MerlinDaoConversionUtil.convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger);
+            retVal = MerlinDaoConversionUtil.convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener);
         }
         catch (MerlinInvalidTimestepException e)
         {
-            logFileLogger.log(Level.WARNING, e, () -> "Unsupported timestep: " + data.getTimestep());
             if(progressListener != null)
             {
-                progressListener.progress("Skipping Measure with unsupported timestep", MessageType.IMPORTANT);
+                String msg = "Skipping Measure with unsupported timestep: " + data.getTimestep();
+                logFileLogger.log(msg);
+                progressListener.progress(msg, MessageType.IMPORTANT);
             }
             LOGGER.log(Level.CONFIG, e, () -> "Unsupported timestep: " + data.getTimestep());
         }
@@ -149,8 +161,8 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     }
 
     private DataWrapper retrieveData(Instant start, Instant end, MeasureWrapper measure, Integer qualityVersionId,
-                                     MerlinExchangeDaoCompletionTracker completionTracker,
-                                     ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
+                                     MerlinExchangeCompletionTracker completionTracker,
+                                     ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
     {
         MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
         DataWrapper retVal = null;
@@ -159,9 +171,6 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             try
             {
                 retVal = access.getEventsBySeries(new ApiConnectionInfo(_merlinApiRoot), _token, measure, qualityVersionId, start, end);
-                String progressMsg = "Successfully retrieved data for " + measure.getSeriesString() + " with " + retVal.getEvents().size() + " events!";
-                int percentComplete = completionTracker.readTaskCompleted();
-                logProgress(progressListener, logFileLogger, progressMsg, percentComplete);
             }
             catch (IOException | HttpAccessException ex)
             {
@@ -171,14 +180,10 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         return retVal;
     }
 
-    private Optional<QualityVersionWrapper> getQualityVersionIdFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataExchangeCache cache, Logger logger, ProgressListener progressListener)
+    private Optional<QualityVersionWrapper> getQualityVersionIdFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataExchangeCache cache)
     {
         String qualityVersionNameFromSet = dataExchangeSet.getQualityVersionName();
         Integer qualityVersionIdFromSet = dataExchangeSet.getQualityVersionId();
-        if(progressListener != null)
-        {
-            progressListener.progress("Retrieving Quality Version for " + qualityVersionNameFromSet + " (id: " + qualityVersionIdFromSet + ")", ProgressListener.MessageType.IMPORTANT);
-        }
         List<QualityVersionWrapper> qualityVersions = cache.getCachedQualityVersions();
         Optional<QualityVersionWrapper> retVal = qualityVersions.stream()
                 .filter(qualityVersion -> qualityVersion.getQualityVersionName().equalsIgnoreCase(qualityVersionNameFromSet))
@@ -191,30 +196,29 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         }
         if(!retVal.isPresent())
         {
-            logger.log(Level.WARNING, () -> "Failed to find matching quality version ID in retrieved quality versions for quality version name "
+            LOGGER.log(Level.WARNING, () -> "Failed to find matching quality version ID in retrieved quality versions for quality version name "
                     + qualityVersionNameFromSet + " or id " + qualityVersionIdFromSet
                     + ". Using NULL for quality version.");
         }
         return retVal;
     }
 
-    private void logProgress(ProgressListener progressListener, Logger logFileLogger, String message, int percentComplete)
+    private void logProgress(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String message, int percentComplete)
     {
-        logFileLogger.info(() -> message);
         if(progressListener != null)
         {
             progressListener.progress(message, MessageType.IMPORTANT, percentComplete);
         }
     }
 
-    private void logError(ProgressListener progressListener, Logger logFileLogger, String errorMsg, Throwable e)
+    private void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, Throwable e)
     {
         if(progressListener != null)
         {
             progressListener.progress(errorMsg, MessageType.ERROR);
         }
         LOGGER.log(Level.CONFIG, e, () -> errorMsg);
-        logFileLogger.log(Level.SEVERE, e, () -> errorMsg);
+        logFileLogger.log("Error occurred: " + errorMsg);
     }
 
 }

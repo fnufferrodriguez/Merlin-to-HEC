@@ -1,6 +1,6 @@
 package gov.usbr.wq.merlindataexchange;
 
-public final class MerlinExchangeDaoCompletionTracker
+public final class MerlinExchangeCompletionTracker
 {
     private static final int TASKS_TO_PERFORM_PER_MEASURE = 2; //1 for read and 1 for write
     private int _numberOfMeasuresToComplete;
@@ -9,7 +9,7 @@ public final class MerlinExchangeDaoCompletionTracker
     private int _writesCompleted = 0;
     private int _readsCompleted = 0;
 
-    public MerlinExchangeDaoCompletionTracker(int percentCompleteBeforeReadAndWrite)
+    public MerlinExchangeCompletionTracker(int percentCompleteBeforeReadAndWrite)
     {
         _percentCompleteBeforeReadAndWrite = percentCompleteBeforeReadAndWrite;
     }
@@ -28,13 +28,13 @@ public final class MerlinExchangeDaoCompletionTracker
         return weightedCompletedPercentage + _percentCompleteBeforeReadAndWrite;
     }
 
-    public int writeTaskCompleted()
+    public synchronized int writeTaskCompleted()
     {
         _writesCompleted++;
         return readWriteTaskCompleted();
     }
 
-    public int readTaskCompleted()
+    public synchronized int readTaskCompleted()
     {
         _readsCompleted++;
         return readWriteTaskCompleted();

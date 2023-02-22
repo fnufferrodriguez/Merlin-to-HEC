@@ -61,6 +61,76 @@ final class MerlinDataExchangeEngineTest
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
     }
 
+    @Test
+    void testRunExtractWithBadTemplate() throws IOException
+    {
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        Path mockXml = getMockXml("merlin_mock_config_dx_bad_template.xml");
+        List<Path> mocks = Collections.singletonList(mockXml);
+        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Instant start = Instant.parse("2019-01-01T08:00:00Z");
+        Instant end = Instant.parse("2022-08-30T08:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(workingDir)
+                .withLogFileDirectory(workingDir)
+                .withStart(start)
+                .withEnd(end)
+                .withStoreOption(storeOption)
+                .withFPartOverride("fPart")
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(buildLoggingProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.FAILURE, status);
+    }
+
+    @Test
+    void testRunExtractWithPartialComplete() throws IOException
+    {
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        Path mockXml = getMockXml("merlin_mock_dx_partial_complete_multi_timestep.xml");
+        List<Path> mocks = Collections.singletonList(mockXml);
+        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Instant start = Instant.parse("2019-01-01T08:00:00Z");
+        Instant end = Instant.parse("2022-08-30T08:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(workingDir)
+                .withLogFileDirectory(workingDir)
+                .withStart(start)
+                .withEnd(end)
+                .withStoreOption(storeOption)
+                .withFPartOverride("fPart")
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(buildLoggingProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.PARTIAL_SUCCESS, status);
+    }
+
     void testRunExtractCancelled() throws IOException, HttpAccessException, InterruptedException {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
@@ -102,7 +172,7 @@ final class MerlinDataExchangeEngineTest
             @Override
             public void start()
             {
-                LOGGER.info(() -> "started");
+                System.out.println("started");
             }
 
             @Override
@@ -132,19 +202,19 @@ final class MerlinDataExchangeEngineTest
             @Override
             public void finish()
             {
-                LOGGER.info(() -> "Finished!");
+                System.out.println("Finished!");
             }
 
             @Override
             public void progress(int i)
             {
-                LOGGER.info(() -> "Progress: " + i + "%");
+                System.out.println("Progress: " + i + "%");
             }
 
             @Override
             public void progress(String s)
             {
-                LOGGER.info(() -> s);
+                System.out.println(s);
             }
 
             @Override
@@ -152,11 +222,11 @@ final class MerlinDataExchangeEngineTest
             {
                 if(messageType == MessageType.IMPORTANT)
                 {
-                    LOGGER.info(() -> s);
+                    System.out.println(s);
                 }
                 if(messageType == MessageType.ERROR)
                 {
-                    LOGGER.warning(() -> s);
+                    System.out.println("ERROR: " + s);
                 }
             }
 
@@ -169,14 +239,7 @@ final class MerlinDataExchangeEngineTest
             @Override
             public void progress(String s, MessageType messageType, int i)
             {
-                if(messageType == MessageType.IMPORTANT)
-                {
-                    LOGGER.info(() -> s);
-                }
-                if(messageType == MessageType.ERROR)
-                {
-                    LOGGER.warning(() -> s);
-                }
+                progress(s, messageType);
                 progress(i);
             }
 

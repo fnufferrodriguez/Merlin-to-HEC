@@ -42,7 +42,7 @@ final class MerlinDataConverter
 		throw new AssertionError("This utility class is not intended to be instantiated.");
 	}
 
-	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, Logger logFileLogger)
+	static TimeSeriesContainer dataToTimeSeries(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener)
 			throws MerlinInvalidTimestepException
 	{
 		TimeSeriesContainer output = new TimeSeriesContainer();
@@ -110,19 +110,18 @@ final class MerlinDataConverter
 			output.endHecTime = endTime;
 			try
 			{
-				convertUnits(output, unitSystemToConvertTo, data, progressListener, logFileLogger);
+				convertUnits(output, unitSystemToConvertTo, data);
 			}
 			catch (UnitsConversionException e)
 			{
-				logUnitConversionError(e, logFileLogger, progressListener);
+				logUnitConversionError(e, progressListener);
 			}
 		}
 		return output;
 	}
 
-	private static void logUnitConversionError(Exception e, Logger logFileLogger, ProgressListener progressListener)
+	private static void logUnitConversionError(Exception e, ProgressListener progressListener)
 	{
-		logFileLogger.log(Level.SEVERE, e, () -> "Failed to determine units to convert to");
 		LOGGER.log(Level.CONFIG, e, () -> "Failed to determine units to convert to");
 		if (progressListener != null)
 		{
@@ -131,7 +130,7 @@ final class MerlinDataConverter
 	}
 
 
-	private static void convertUnits(TimeSeriesContainer output, String unitSystemToConvertTo, DataWrapper data, ProgressListener progressListener, Logger logFileLogger)
+	private static void convertUnits(TimeSeriesContainer output, String unitSystemToConvertTo, DataWrapper data)
 			throws UnitsConversionException
 	{
 		int convertToUnitSystemId = Unit.UNDEF_ID;
@@ -147,11 +146,6 @@ final class MerlinDataConverter
 		String unitsFrom = data.getUnits();
 		if (!unitsFrom.equalsIgnoreCase(unitsTo))
 		{
-			if (progressListener != null)
-			{
-				progressListener.progress("Converting units from " + unitsFrom + " to " + unitsTo);
-			}
-			logFileLogger.info(() -> "Converting units from " + unitsFrom + " to " + unitsTo);
 			Units.convertUnits(output, convertToUnitSystemId);
 		}
 	}

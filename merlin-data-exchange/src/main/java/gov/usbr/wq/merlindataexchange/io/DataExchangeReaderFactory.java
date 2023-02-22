@@ -4,15 +4,12 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import rma.util.lookup.Lookup;
 import rma.util.lookup.Lookups;
 
-import java.util.logging.Logger;
-
 public final class DataExchangeReaderFactory
 {
-    public static DataExchangeReader lookupReader(DataStore source, Logger logFileLogger) throws DataExchangeLookupException
+    public static DataExchangeReader lookupReader(DataStore source) throws DataExchangeLookupException
     {
         String delimeter = "/";
         String lookupPath = DataExchangeReader.LOOKUP_PATH + delimeter + source.getDataStoreType();
-        logFileLogger.info(() -> "Looking for DataExchangeReader at: " + lookupPath);
         Lookup lookup = Lookups.forPath(lookupPath);
         DataExchangeReader retVal = lookup.lookup(DataExchangeReader.class);
         if(retVal == null)

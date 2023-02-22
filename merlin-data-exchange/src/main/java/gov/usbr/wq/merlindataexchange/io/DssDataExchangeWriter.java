@@ -2,8 +2,9 @@ package gov.usbr.wq.merlindataexchange.io;
 
 import com.rma.io.DssFileManagerImpl;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.MerlinExchangeDaoCompletionTracker;
+import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import hec.io.StoreOption;
 import hec.io.TimeSeriesContainer;
@@ -24,39 +25,34 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     private Path _dssWritePath;
 
     @Override
-    public synchronized void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper seriesPath, MerlinParameters runtimeParameters,
-                                       MerlinExchangeDaoCompletionTracker completionTracker, ProgressListener progressListener, Logger logFileLogger, AtomicBoolean isCancelled)
+    public synchronized void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, MerlinParameters runtimeParameters,
+                                       MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
     {
         StoreOption storeOption = runtimeParameters.getStoreOption();
         if(timeSeriesContainer != null && !isCancelled.get())
         {
-            String successfulConversionMsg = "Successfully converted Measure Measure (" + seriesPath + ") to timeseries! Writing timeseries to " + _dssWritePath;
-            if(progressListener != null)
-            {
-                progressListener.progress(successfulConversionMsg, ProgressListener.MessageType.IMPORTANT);
-            }
-            logFileLogger.info(() -> successfulConversionMsg);
+            String seriesString = measure.getSeriesString();
             timeSeriesContainer.fileName = _dssWritePath.toString();
             int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
             if(success == 0)
             {
-                String successMsg = "Measure (" + seriesPath + ") successfully written to DSS! DSS Pathname: " + timeSeriesContainer.fullName;
+                String successMsg = "Successfully wrote Measure (" + seriesString+ ") to " + timeSeriesContainer.fullName;
                 int percentComplete = completionTracker.writeTaskCompleted();
                 if(progressListener != null)
                 {
                     progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, percentComplete);
                 }
-                logFileLogger.info(() -> successMsg);
+                logFileLogger.log(successMsg);
                 LOGGER.config(() -> successMsg);
             }
             else
             {
-                String failMsg = "Failed to write Measure (" +  seriesPath + ") to DSS! Error status code: " + success;
+                String failMsg = "Failed to write Measure (" +  seriesString + ") to DSS! Error status code: " + success;
                 if(progressListener != null)
                 {
                     progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
                 }
-                logFileLogger.severe(() -> failMsg);
+                logFileLogger.log(failMsg);
                 LOGGER.config(() -> failMsg);
             }
         }
