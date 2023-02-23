@@ -5,17 +5,16 @@ import hec.ui.ProgressListener;
 
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-final class TestLogProgressListener implements ProgressListener
+public final class TestLogProgressListener implements ProgressListener
 {
 
     private static final Logger LOGGER = Logger.getLogger(TestLogProgressListener.class.getName());
     private int _progress = 0;
 
-    TestLogProgressListener()
+    public TestLogProgressListener()
     {
         LOGGER.setUseParentHandlers(false);
         LOGGER.addHandler(new ConsoleHandler()
@@ -27,7 +26,7 @@ final class TestLogProgressListener implements ProgressListener
                     @Override
                     public String format(LogRecord record)
                     {
-                        return "PROGRESS LOG: " + record.getMessage() + "\n";
+                        return "PROGRESS LOG " + record.getMessage() + "\n";
                     }
                 };
             }
@@ -36,7 +35,7 @@ final class TestLogProgressListener implements ProgressListener
     @Override
     public void start()
     {
-        LOGGER.info("started");
+
     }
 
     @Override
@@ -66,7 +65,6 @@ final class TestLogProgressListener implements ProgressListener
     @Override
     public void finish()
     {
-        LOGGER.info("Finished!");
     }
 
     @Override
@@ -85,13 +83,13 @@ final class TestLogProgressListener implements ProgressListener
     @Override
     public void progress(String s, MessageType messageType)
     {
-        if(messageType == MessageType.IMPORTANT)
-        {
-            LOGGER.info(s);
-        }
         if(messageType == MessageType.ERROR)
         {
             LOGGER.info("ERROR: " + s);
+        }
+        else
+        {
+            LOGGER.info("(" + messageType + "): " + s);
         }
     }
 
@@ -104,8 +102,7 @@ final class TestLogProgressListener implements ProgressListener
     @Override
     public void progress(String s, MessageType messageType, int i)
     {
-        progress(s, messageType);
-        progress(i);
+        progress(s + " (" + i + "%)", messageType);
     }
 
     @Override
@@ -114,7 +111,7 @@ final class TestLogProgressListener implements ProgressListener
 
     }
 
-    int getProgress()
+    public int getProgress()
     {
         return _progress;
     }

@@ -6,6 +6,8 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import hec.heclib.dss.DSSPathname;
+import hec.heclib.dss.HecTimeSeriesBase;
 import hec.io.StoreOption;
 import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
@@ -13,6 +15,7 @@ import rma.services.annotations.ServiceProvider;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -31,16 +34,23 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         StoreOption storeOption = runtimeParameters.getStoreOption();
         if(timeSeriesContainer != null && !isCancelled.get())
         {
+            DSSPathname pathname = new DSSPathname(timeSeriesContainer.fullName);
+            int interval = HecTimeSeriesBase.getIntervalFromEPart(pathname.getEPart());
+            String progressMsg = "Read " + measure.getSeriesString() + " | Events read: " + timeSeriesContainer.getNumberValues()
+                    + ", expected " + (int) Math.ceil(Duration.between(runtimeParameters.getStart(), runtimeParameters.getEnd()).toMinutes() / ((double)interval));
+            logFileLogger.log(progressMsg);
+            int percentComplete = completionTracker.readTaskCompleted();
+            logProgress(progressListener, progressMsg, percentComplete);
             String seriesString = measure.getSeriesString();
             timeSeriesContainer.fileName = _dssWritePath.toString();
             int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
             if(success == 0)
             {
-                String successMsg = "Successfully wrote Measure (" + seriesString+ ") to " + timeSeriesContainer.fullName;
-                int percentComplete = completionTracker.writeTaskCompleted();
+                String successMsg = "Wrote " + seriesString + " to " + timeSeriesContainer.fullName;
+                percentComplete = completionTracker.writeTaskCompleted();
                 if(progressListener != null)
                 {
-                    progressListener.progress(successMsg, ProgressListener.MessageType.IMPORTANT, percentComplete);
+                    progressListener.progress(successMsg, ProgressListener.MessageType.GENERAL, percentComplete);
                 }
                 logFileLogger.log(successMsg);
                 LOGGER.config(() -> successMsg);
@@ -85,6 +95,14 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             xmlFilePath = Paths.get(filepath);
         }
         return xmlFilePath;
+    }
+
+    private synchronized void logProgress(ProgressListener progressListener, String message, int percentComplete)
+    {
+        if(progressListener != null)
+        {
+            progressListener.progress(message, ProgressListener.MessageType.GENERAL, percentComplete);
+        }
     }
 
 }

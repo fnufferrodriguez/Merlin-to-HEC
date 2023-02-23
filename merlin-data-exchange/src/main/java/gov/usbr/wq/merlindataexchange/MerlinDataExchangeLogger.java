@@ -15,7 +15,7 @@ final class MerlinDataExchangeLogger
 
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeLogger.class.getName());
     private static final Pattern LOG_PATTERN = Pattern.compile(".log$");
-    private static final String SEPARATOR = "------------------------------------------------------";
+    static final String SEPARATOR = "------------------------------------------------------";
     private final StringBuilder _header = new StringBuilder();
     private final List<MerlinDataExchangeLogBody> _logBodies = new ArrayList<>();
 
@@ -71,12 +71,16 @@ final class MerlinDataExchangeLogger
         StringBuilder retVal = new StringBuilder(_header);
         retVal.append(SEPARATOR);
         retVal.append("\n");
+        retVal.append(SEPARATOR);
+        retVal.append("\n");
         _logBodies.forEach(body ->
         {
             retVal.append(body.getLog());
             retVal.append(SEPARATOR);
             retVal.append("\n");
         });
+        retVal.append(SEPARATOR);
+        retVal.append("\n");
         retVal.append(_footer);
         return retVal.toString();
     }

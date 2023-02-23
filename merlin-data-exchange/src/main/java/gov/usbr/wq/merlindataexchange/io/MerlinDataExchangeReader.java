@@ -60,7 +60,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             try
             {
                 UsernamePasswordHolder usernamePassword = runtimeParameters.getUsernamePasswordForUrl(_merlinApiRoot);
-                retVal = retrieveDataAsTimeSeries(usernamePassword, start, end, measure, qualityVersionId, completionTracker, progressListener, logFileLogger,
+                retVal = retrieveDataAsTimeSeries(usernamePassword, start, end, measure, qualityVersionId, progressListener, logFileLogger,
                         isCancelled, fPartOverride, unitSystemToConvertTo);
             }
             catch (UsernamePasswordNotFoundException e)
@@ -74,15 +74,14 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     }
 
     private TimeSeriesContainer retrieveDataAsTimeSeries(UsernamePasswordHolder usernamePassword, Instant start, Instant end, MeasureWrapper measure, Integer qualityVersionId,
-                                                         MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+                                                         ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                          AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo)
     {
         TimeSeriesContainer retVal = null;
         try
         {
             _token = generateNewTokenIfNecessary(new ApiConnectionInfo(_merlinApiRoot), usernamePassword.getUsername(), usernamePassword.getPassword());
-            DataWrapper data = retrieveData(start, end, measure, qualityVersionId,
-                    completionTracker, progressListener, logFileLogger, isCancelled);
+            DataWrapper data = retrieveData(start, end, measure, qualityVersionId, progressListener, logFileLogger, isCancelled);
             if(data == null)
             {
                 String errorMsg = "Failed to retrieve data for measure: " + measure.getSeriesString();
@@ -96,13 +95,6 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             else if(!isCancelled.get())
             {
                 retVal = convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger);
-                if(retVal != null)
-                {
-                    String progressMsg = "Successfully read Measure (" + measure.getSeriesString() + ") with " + retVal.getNumberValues() + " values";
-                    logFileLogger.log(progressMsg);
-                    int percentComplete = completionTracker.readTaskCompleted();
-                    logProgress(progressListener, logFileLogger, progressMsg, percentComplete);
-                }
             }
         }
         catch (HttpAccessException e)
@@ -122,15 +114,20 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         }
         catch (MerlinInvalidTimestepException e)
         {
-            if(progressListener != null)
-            {
-                String msg = "Skipping Measure with unsupported timestep: " + data.getTimestep();
-                logFileLogger.log(msg);
-                progressListener.progress(msg, MessageType.IMPORTANT);
-            }
+            String msg = "Skipping Measure with unsupported timestep: " + data.getTimestep();
+            logFileLogger.log(msg);
+            logProgressMessage(progressListener, msg);
             LOGGER.log(Level.CONFIG, e, () -> "Unsupported timestep: " + data.getTimestep());
         }
         return retVal;
+    }
+
+    private synchronized void logProgressMessage(ProgressListener progressListener, String msg)
+    {
+        if (progressListener != null)
+        {
+            progressListener.progress(msg, MessageType.GENERAL);
+        }
     }
 
     private TokenContainer generateNewTokenIfNecessary(ApiConnectionInfo connectionInfo, String username, char[] password) throws HttpAccessException
@@ -161,7 +158,6 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     }
 
     private DataWrapper retrieveData(Instant start, Instant end, MeasureWrapper measure, Integer qualityVersionId,
-                                     MerlinExchangeCompletionTracker completionTracker,
                                      ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
     {
         MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
@@ -203,15 +199,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         return retVal;
     }
 
-    private void logProgress(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String message, int percentComplete)
-    {
-        if(progressListener != null)
-        {
-            progressListener.progress(message, MessageType.IMPORTANT, percentComplete);
-        }
-    }
-
-    private void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, Throwable e)
+    private synchronized void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, Throwable e)
     {
         if(progressListener != null)
         {

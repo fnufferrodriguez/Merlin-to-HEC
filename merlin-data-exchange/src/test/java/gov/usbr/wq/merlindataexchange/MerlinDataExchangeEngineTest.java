@@ -32,15 +32,15 @@ final class MerlinDataExchangeEngineTest
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
         Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
         List<Path> mocks = Arrays.asList(mockXml, mockXml2);
-        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
         MerlinParameters params = new MerlinParametersBuilder()
-                .withWatershedDirectory(workingDir)
-                .withLogFileDirectory(workingDir)
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
                 .withStart(start)
                 .withEnd(end)
                 .withStoreOption(storeOption)
@@ -67,15 +67,15 @@ final class MerlinDataExchangeEngineTest
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx_bad_template.xml");
         List<Path> mocks = Collections.singletonList(mockXml);
-        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
         MerlinParameters params = new MerlinParametersBuilder()
-                .withWatershedDirectory(workingDir)
-                .withLogFileDirectory(workingDir)
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
                 .withStart(start)
                 .withEnd(end)
                 .withStoreOption(storeOption)
@@ -102,15 +102,15 @@ final class MerlinDataExchangeEngineTest
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_dx_partial_complete_multi_timestep.xml");
         List<Path> mocks = Collections.singletonList(mockXml);
-        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
         MerlinParameters params = new MerlinParametersBuilder()
-                .withWatershedDirectory(workingDir)
-                .withLogFileDirectory(workingDir)
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
                 .withStart(start)
                 .withEnd(end)
                 .withStoreOption(storeOption)
@@ -136,15 +136,15 @@ final class MerlinDataExchangeEngineTest
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
         Path mockXml = getMockXml("merlin_mock_config_dx.xml");
-        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
         MerlinParameters params = new MerlinParametersBuilder()
-                .withWatershedDirectory(workingDir)
-                .withLogFileDirectory(workingDir)
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
                 .withStart(start)
                 .withEnd(end)
                 .withStoreOption(storeOption)
@@ -182,5 +182,10 @@ final class MerlinDataExchangeEngineTest
             throw new IOException("Failed to get resource: " + resource);
         }
         return new File(resourceUrl.getFile()).toPath();
+    }
+
+    private Path getTestDirectory()
+    {
+        return Paths.get(System.getProperty("user.dir")).resolve("build/tmp");
     }
 }
