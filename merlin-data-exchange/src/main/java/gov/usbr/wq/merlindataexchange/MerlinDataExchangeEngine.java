@@ -140,7 +140,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 startStr = MerlinLogDateFormatter.formatInstant(start);
             }
             String endStr = "NULL";
-            Instant end = _runtimeParameters.getStart();
+            Instant end = _runtimeParameters.getEnd();
             if(end != null)
             {
                 endStr = MerlinLogDateFormatter.formatInstant(end);

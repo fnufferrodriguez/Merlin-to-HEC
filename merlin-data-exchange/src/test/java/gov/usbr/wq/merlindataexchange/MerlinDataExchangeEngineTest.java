@@ -33,7 +33,7 @@ final class MerlinDataExchangeEngineTest
         Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
         List<Path> mocks = Arrays.asList(mockXml, mockXml2);
         Path testDirectory = getTestDirectory();
-        Instant start = Instant.parse("2019-01-01T08:00:00Z");
+        Instant start = Instant.parse("2019-01-01T08:30:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");

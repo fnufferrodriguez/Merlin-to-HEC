@@ -6,17 +6,23 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import hec.data.DataSetIllegalArgumentException;
+import hec.data.Interval;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecTimeSeriesBase;
 import hec.io.StoreOption;
 import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
+import hec.ui.ProgressListener.MessageType;
 import rma.services.annotations.ServiceProvider;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 100, path = DataExchangeWriter.LOOKUP_PATH
@@ -32,40 +38,61 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
                                        MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
     {
         StoreOption storeOption = runtimeParameters.getStoreOption();
+        String seriesString = measure.getSeriesString();
         if(timeSeriesContainer != null && !isCancelled.get())
         {
             DSSPathname pathname = new DSSPathname(timeSeriesContainer.fullName);
-            int interval = HecTimeSeriesBase.getIntervalFromEPart(pathname.getEPart());
-            String progressMsg = "Read " + measure.getSeriesString() + " | Events read: " + timeSeriesContainer.getNumberValues()
-                    + ", expected " + (int) Math.ceil(Duration.between(runtimeParameters.getStart(), runtimeParameters.getEnd()).toMinutes() / ((double)interval));
-            logFileLogger.log(progressMsg);
-            int percentComplete = completionTracker.readTaskCompleted();
-            logProgress(progressListener, progressMsg, percentComplete);
-            String seriesString = measure.getSeriesString();
-            timeSeriesContainer.fileName = _dssWritePath.toString();
-            int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
-            if(success == 0)
+            try
             {
-                String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString;
-                int percentCompleteAfterWrite = completionTracker.writeTaskCompleted();
-                if(progressListener != null)
+                String progressMsg = "Read " + measure.getSeriesString() + " | Is processed: " + measure.isProcessed() + " | Events read: " + timeSeriesContainer.getNumberValues()
+                            + ", expected " + getExpectedNumValues(runtimeParameters.getStart(), runtimeParameters.getEnd(), pathname.ePart());
+                logFileLogger.log(progressMsg);
+                int percentComplete = completionTracker.readTaskCompleted();
+                logProgress(progressListener, progressMsg, percentComplete);
+                timeSeriesContainer.fileName = _dssWritePath.toString();
+                int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
+                if(success == 0)
                 {
-                    progressListener.progress(successMsg, ProgressListener.MessageType.GENERAL, percentCompleteAfterWrite);
+                    String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString;
+                    int percentCompleteAfterWrite = completionTracker.writeTaskCompleted();
+                    if(progressListener != null)
+                    {
+                        progressListener.progress(successMsg, MessageType.GENERAL, percentCompleteAfterWrite);
+                    }
+                    logFileLogger.log(successMsg);
+                    LOGGER.config(() -> successMsg);
                 }
-                logFileLogger.log(successMsg);
-                LOGGER.config(() -> successMsg);
+                else
+                {
+                    String failMsg = "Failed to write " +  seriesString + " to DSS! Error status code: " + success;
+                    if(progressListener != null)
+                    {
+                        progressListener.progress(failMsg, MessageType.ERROR);
+                    }
+                    logFileLogger.log(failMsg);
+                    LOGGER.config(() -> failMsg);
+                }
             }
-            else
+            catch (DataSetIllegalArgumentException e)
             {
-                String failMsg = "Failed to write " +  seriesString + " to DSS! Error status code: " + success;
-                if(progressListener != null)
-                {
-                    progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
-                }
-                logFileLogger.log(failMsg);
-                LOGGER.config(() -> failMsg);
+                String errorMsg = "Error calculating expected values for " + seriesString + ": " + e.getMessage();
+                logError(progressListener, logFileLogger, errorMsg, e);
             }
         }
+    }
+
+    private int getExpectedNumValues(Instant start, Instant end, String ePart) throws DataSetIllegalArgumentException
+    {
+        int interval = HecTimeSeriesBase.getIntervalFromEPart(ePart);
+        long topOfInterval = Interval.getTimeAtTopOfIntervalOnOrBefore(start.toEpochMilli(), ePart, TimeZone.getDefault());
+        boolean firstIncluded = topOfInterval == start.toEpochMilli();
+        long duration = Duration.between(start, end).toMinutes();
+        int retVal = (int) Math.ceil(duration / ((double) interval));
+        if(firstIncluded)
+        {
+            retVal ++;
+        }
+        return retVal;
     }
 
     @Override
@@ -101,8 +128,19 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     {
         if(progressListener != null)
         {
-            progressListener.progress(message, ProgressListener.MessageType.GENERAL, percentComplete);
+            progressListener.progress(message, MessageType.GENERAL, percentComplete);
         }
     }
+
+    private synchronized void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, DataSetIllegalArgumentException e)
+    {
+        if(progressListener != null)
+        {
+            progressListener.progress(errorMsg, MessageType.ERROR);
+        }
+        logFileLogger.log(errorMsg);
+        LOGGER.log(Level.CONFIG, e, () -> errorMsg);
+    }
+
 
 }

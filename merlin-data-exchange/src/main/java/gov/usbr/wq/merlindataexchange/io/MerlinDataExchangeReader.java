@@ -114,7 +114,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         }
         catch (MerlinInvalidTimestepException e)
         {
-            String msg = "Skipping Measure with unsupported timestep: " + data.getTimestep();
+            String msg = "Skipping " + data.getSeriesId() + " with unsupported timestep: " + data.getTimestep();
             logFileLogger.log(msg);
             logProgressMessage(progressListener, msg);
             LOGGER.log(Level.CONFIG, e, () -> "Unsupported timestep: " + data.getTimestep());
