@@ -72,7 +72,7 @@ final class MerlinDataExchangeParserTest
 
     private Path getMockXml() throws IOException
     {
-        String resource = "gov/usbr/wq/merlindataexchange/merlin_mock_dx.xml";
+        String resource = "gov/usbr/wq/merlindataexchange/merlin_mock_dx_partial_complete_multi_timestep.xml";
         URL resourceUrl = getClass().getClassLoader().getResource(resource);
         if (resourceUrl == null)
         {

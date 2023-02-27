@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -87,8 +86,8 @@ class MerlinDataConverterTest
 		DataWrapper wrapper = new DataWrapper(data);
 		try
 		{
-			TimeSeriesContainer tsc = MerlinDataConverter.dataToTimeSeries(wrapper, "SI", null, null,
-					Logger.getLogger(MerlinDataConverterTest.class.getName()));
+			TimeSeriesContainer tsc = MerlinDataConverter.dataToTimeSeries(wrapper, "SI", null, null
+            );
 			int[] receivedTimes = tsc.times;
 			double[] receivedValues = tsc.values;
 
