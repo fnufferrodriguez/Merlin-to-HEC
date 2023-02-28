@@ -56,8 +56,8 @@ final class MerlinDataConverter
 			pathname.setAPart(data.getProject());
 			pathname.setBPart(data.getStation() + "-" + data.getSensor());
 			pathname.setCPart(data.getParameter());
-			String fPart = pathname.getFPart();
-
+			String[] seriesSplit = data.getSeriesId().split("/");
+			String fPart = seriesSplit[seriesSplit.length - 1];
 			int parsedInterval = Integer.parseInt(data.getTimestep());
 			String interval = HecTimeSeriesBase.getEPartFromInterval(parsedInterval);
 			pathname.setFPart(fPart);
