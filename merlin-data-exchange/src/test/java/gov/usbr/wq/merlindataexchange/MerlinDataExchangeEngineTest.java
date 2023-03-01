@@ -97,19 +97,90 @@ final class MerlinDataExchangeEngineTest
             assertEquals(merlinData.getEvents().size(), tsc.getNumberValues());
             DSSPathname pathname = new DSSPathname(tsc.getFullName());
             assertEquals( HecTimeSeriesBase.getEPartFromInterval(Integer.parseInt(merlinData.getTimestep())), pathname.ePart());
-            //assertEquals(merlinData.getStartTime(), tsc.getStartTime());
+            assertEquals(merlinData.getParameter(), pathname.cPart());
+            assertEquals(merlinData.getStation() + "-" + merlinData.getSensor(), pathname.getBPart());
+            assertEquals(merlinData.getProject(), pathname.getAPart());
             DecimalFormat df = new DecimalFormat("#.####");
             int i=0;
             for(EventWrapper event : merlinData.getEvents())
             {
-                HecTime merlinTime = HecTime.fromZonedDateTime(event.getDate());
-                HecTime tscTime = tsc.getTimes().elementAt(i);
+                HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
+                HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
+                tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
                 assertEquals(Double.parseDouble(df.format(event.getValue())), Double.parseDouble(df.format(tsc.getValue(i))));
-                //assertEquals(merlinTime, HecTime.convertToTimeZone(tscTime, tsc.getTimes().getTimeZone(), TimeZone.getTimeZone("GMT")));
+                assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
                 i++;
             }
         }
+    }
 
+    @Test
+    void testRunExtractLargeTimeWindow() throws IOException, XMLStreamException, HttpAccessException
+    {
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        String mockFileName = "merlin_mock_config_dx.xml";
+        Path mockXml = getMockXml(mockFileName);
+        //Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
+        List<Path> mocks = Arrays.asList(mockXml);
+        Path testDirectory = getTestDirectory();
+        Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
+        if(Files.exists(dssFile))
+        {
+            Files.delete(dssFile);
+        }
+        Instant start = Instant.parse("2015-02-01T12:00:00Z");
+        Instant end = Instant.parse("2022-08-21T12:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .withStoreOption(storeOption)
+                .withStart(start)
+                .withEnd(end)
+                .withFPartOverride("fPart")
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(buildLoggingProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        Map<String, DataWrapper> expectedDssToData = buildExpectedDss(mocks, start, end, username, password);
+        assertNotNull(expectedDssToData);
+        String dssFileName = testDirectory.resolve(mockFileName.replace(".xml", ".dss")).toString();
+        for(Map.Entry<String, DataWrapper> entry : expectedDssToData.entrySet())
+        {
+            String dssPath = entry.getKey();
+            DataWrapper merlinData = entry.getValue();
+            TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(new DSSIdentifier(dssFileName, dssPath), false);
+            assertNotNull(tsc);
+            assertEquals(merlinData.getEvents().size(), tsc.getNumberValues());
+            DSSPathname pathname = new DSSPathname(tsc.getFullName());
+            assertEquals( HecTimeSeriesBase.getEPartFromInterval(Integer.parseInt(merlinData.getTimestep())), pathname.ePart());
+            assertEquals(merlinData.getParameter(), pathname.cPart());
+            assertEquals(merlinData.getStation() + "-" + merlinData.getSensor(), pathname.getBPart());
+            assertEquals(merlinData.getProject(), pathname.getAPart());
+            DecimalFormat df = new DecimalFormat("#.####");
+            int i=0;
+            for(EventWrapper event : merlinData.getEvents())
+            {
+                HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
+                HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
+                tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
+                assertEquals(Double.parseDouble(df.format(event.getValue())), Double.parseDouble(df.format(tsc.getValue(i))));
+                assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
+                i++;
+            }
+        }
     }
 
     private Map<String, DataWrapper> buildExpectedDss(List<Path> mocks, Instant start, Instant end, String username, char[] pw) throws XMLStreamException, IOException, HttpAccessException {
