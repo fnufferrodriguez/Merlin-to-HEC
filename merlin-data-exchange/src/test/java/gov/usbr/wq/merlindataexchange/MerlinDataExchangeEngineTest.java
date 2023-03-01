@@ -52,7 +52,7 @@ final class MerlinDataExchangeEngineTest
         char[] password = ResourceAccess.getPassword();
         String mockFileName = "merlin_mock_config_dx.xml";
         Path mockXml = getMockXml(mockFileName);
-        //Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
+        //Path mockXml2 = getMockXml("merlin_mock_config_dx_skip_all.xml");
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
@@ -121,7 +121,6 @@ final class MerlinDataExchangeEngineTest
         char[] password = ResourceAccess.getPassword();
         String mockFileName = "merlin_mock_config_dx.xml";
         Path mockXml = getMockXml(mockFileName);
-        //Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
@@ -374,7 +373,6 @@ final class MerlinDataExchangeEngineTest
         char[] password = "NotARealPassword".toCharArray();
         String mockFileName = "merlin_mock_config_dx.xml";
         Path mockXml = getMockXml(mockFileName);
-        //Path mockXml2 = getMockXml("merlin_mock_config_dx2.xml");
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2016-02-01T12:00:00Z");
@@ -387,6 +385,78 @@ final class MerlinDataExchangeEngineTest
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
                         .forUrl("https://www.grabdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .withStoreOption(storeOption)
+                .withStart(start)
+                .withEnd(end)
+                .withFPartOverride("fPart")
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(buildLoggingProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.AUTHENTICATION_FAILURE, status);
+    }
+
+    @Test
+    void testNonExistentWebServer() throws IOException
+    {
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        String mockFileName = "merlin_mock_config_dx_non_existent_server.xml";
+        Path mockXml = getMockXml(mockFileName);
+        List<Path> mocks = Arrays.asList(mockXml);
+        Path testDirectory = getTestDirectory();
+        Instant start = Instant.parse("2016-02-01T12:00:00Z");
+        Instant end = Instant.parse("2016-02-21T12:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabcookiemonsterdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .withStoreOption(storeOption)
+                .withStart(start)
+                .withEnd(end)
+                .withFPartOverride("fPart")
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(buildLoggingProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.AUTHENTICATION_FAILURE, status);
+    }
+
+    @Test
+    void testWebServerWithBadEndpoint() throws IOException
+    {
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        String mockFileName = "merlin_mock_config_dx_bad_endpoint.xml";
+        Path mockXml = getMockXml(mockFileName);
+        List<Path> mocks = Arrays.asList(mockXml);
+        Path testDirectory = getTestDirectory();
+        Instant start = Instant.parse("2016-02-01T12:00:00Z");
+        Instant end = Instant.parse("2016-02-21T12:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com/badendpoint")
                         .setUsername(username)
                         .andPassword(password)
                         .build())

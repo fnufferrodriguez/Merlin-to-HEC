@@ -27,6 +27,7 @@ import hec.ui.ProgressListener.MessageType;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -38,6 +39,7 @@ import java.util.Optional;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -312,13 +314,21 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         catch (HttpAccessException e)
         {
             String errorMsg = "Failed to authenticate user: " + usernamePassword.getUsername() + " for URL: " + connectionInfo.getApiRoot();
+            if(e.getResponseMessage() != null)
+            {
+                errorMsg += ": Error code: " + e.getResponseCode() + " (" + e.getResponseMessage() + ")";
+            }
+            else if(e.getCause() instanceof UnknownHostException)
+            {
+                errorMsg += ": Unknown Host: " + connectionInfo.getApiRoot();
+            }
             logError(errorMsg, e);
-            _fileLoggers.values().forEach(fl ->
+            for (MerlinDataExchangeLogger fl : _fileLoggers.values())
             {
                 MerlinDataExchangeLogBody logBody = new MerlinDataExchangeLogBody();
                 logBody.log(errorMsg);
                 fl.logBody(logBody);
-            });
+            }
             throw e;
         }
     }
