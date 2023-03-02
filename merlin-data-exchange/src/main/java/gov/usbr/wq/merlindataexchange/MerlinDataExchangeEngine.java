@@ -179,15 +179,17 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 bodyWithError.log(errorMsg);
                 _fileLoggers.values().forEach(logger -> logger.logBody(bodyWithError));
             }
-            catch (HttpAccessException e)
+            catch (MerlinAuthorizationException e)
             {
                 retVal = MerlinDataExchangeStatus.AUTHENTICATION_FAILURE;
-                LOGGER.log(Level.CONFIG, e, () -> "User authentication failed");
-
+                logError(e.getMessage(), e);
+                MerlinDataExchangeLogBody bodyWithError = new MerlinDataExchangeLogBody();
+                bodyWithError.log(e.getMessage());
+                _fileLoggers.values().forEach(logger -> logger.logBody(bodyWithError));
             }
-            catch (IOException e)
+            catch (MerlinInitializationException e)
             {
-                logError("Failed to initialize templates, quality versions, and measures cache", e);
+                logError(e.getMessage(), e);
                 MerlinDataExchangeLogBody bodyWithError = new MerlinDataExchangeLogBody();
                 bodyWithError.log("Error Occurred: " + e.getMessage());
                 _fileLoggers.values().forEach(logger -> logger.logBody(bodyWithError));
@@ -287,8 +289,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     }
 
     private void initializeCacheForMerlinUrl(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions)
-            throws IOException, UnsupportedTemplateException, HttpAccessException
-    {
+            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException {
         try
         {
             UsernamePasswordHolder usernamePassword = _runtimeParameters.getUsernamePasswordForUrl(connectionInfo.getApiRoot());
@@ -296,41 +297,57 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }
         catch (UsernamePasswordNotFoundException e)
         {
-            logError("Failed to match username/password for URL in config: " + connectionInfo.getApiRoot(), e);
-            throw new IOException(e);
+            String errorMsg = "Failed to find matching username/password for given URL in config: " + connectionInfo.getApiRoot();
+            LOGGER.log(Level.CONFIG, e, () -> errorMsg);
+            throw new MerlinAuthorizationException(e.getMessage());
         }
     }
 
     private void initializeCacheForMerlinUrlWithAuthentication(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions, UsernamePasswordHolder usernamePassword)
-            throws IOException, UnsupportedTemplateException, HttpAccessException
-    {
-
+            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException {
+        TokenContainer token;
         try
         {
-            TokenContainer token = HttpAccessUtils.authenticate(connectionInfo, usernamePassword.getUsername(), usernamePassword.getPassword());
-            initializeCacheForMerlinWithToken(parsedConfiguartions, connectionInfo, token);
+            token = HttpAccessUtils.authenticate(connectionInfo, usernamePassword.getUsername(), usernamePassword.getPassword());
         }
         catch (HttpAccessException e)
         {
-            String errorMsg = "Failed to authenticate user: " + usernamePassword.getUsername() + " for URL: " + connectionInfo.getApiRoot();
-            if(e.getResponseMessage() != null)
-            {
-                errorMsg += ": Error code: " + e.getResponseCode() + " (" + e.getResponseMessage() + ")";
-            }
-            else if(e.getCause() instanceof UnknownHostException)
-            {
-                errorMsg += ": Unknown Host: " + connectionInfo.getApiRoot();
-            }
-            logError(errorMsg, e);
-            for (MerlinDataExchangeLogger fl : _fileLoggers.values())
-            {
-                MerlinDataExchangeLogBody logBody = new MerlinDataExchangeLogBody();
-                logBody.log(errorMsg);
-                fl.logBody(logBody);
-            }
-            LOGGER.log(Level.CONFIG, e, () -> "Error occurred while initializing with authentication for url: " +connectionInfo.getApiRoot());
-            throw e;
+            String errorMsg = "Failed to authenticate user: " + usernamePassword.getUsername();
+            errorMsg = getMessageFromHttpAccessException(errorMsg, e, connectionInfo);
+            throw new MerlinAuthorizationException(errorMsg);
         }
+        try
+        {
+            initializeCacheForMerlinWithToken(parsedConfiguartions, connectionInfo, token);
+        }
+        catch (IOException | HttpAccessException e)
+        {
+            String errorMsg = "Failed to initialize templates, quality versions, and measures";
+            if (e instanceof HttpAccessException)
+            {
+                errorMsg = getMessageFromHttpAccessException(errorMsg, (HttpAccessException) e, connectionInfo);
+            }
+            else
+            {
+                //IOException only occurs if the object mapper failed in merlin web client
+                errorMsg += " for URL: " + connectionInfo.getApiRoot() + " | Error converting data from Merlin into Java object";
+            }
+            throw new MerlinInitializationException(errorMsg, e);
+        }
+    }
+
+    private String getMessageFromHttpAccessException(String errorMsg, HttpAccessException e, ApiConnectionInfo connectionInfo)
+    {
+        String retVal = errorMsg;
+        if(e.getResponseMessage() != null)
+        {
+            retVal += " for URL: " + connectionInfo.getApiRoot() + " | Error code: " + e.getResponseCode() + " (" + e.getResponseMessage() + ")";
+        }
+        else if(e.getCause() instanceof UnknownHostException)
+        {
+            retVal += " for unknown URL: " + connectionInfo.getApiRoot();
+        }
+        return retVal;
     }
 
     private List<ApiConnectionInfo> getMerlinUrlPaths(Collection<DataExchangeConfiguration> configs)
