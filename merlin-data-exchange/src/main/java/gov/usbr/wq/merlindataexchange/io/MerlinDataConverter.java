@@ -82,6 +82,7 @@ final class MerlinDataConverter
 			output.parameter = data.getParameter();
 			output.location = pathname.bPart();
 			output.version = pathname.fPart();
+			output.setStoreAsDoubles(true);
 
 			NavigableSet<EventWrapper> events = data.getEvents();
 			int[] times = new int[events.size()];

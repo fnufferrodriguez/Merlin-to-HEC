@@ -110,7 +110,7 @@ final class MerlinDataExchangeEngineTest
                 HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
                 HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
                 tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
-                assertEquals(event.getValue(), tsc.getValue(i), 1.0E-4);
+                assertEquals(event.getValue(), tsc.getValue(i), 1.0E-14);
                 assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
                 i++;
             }
