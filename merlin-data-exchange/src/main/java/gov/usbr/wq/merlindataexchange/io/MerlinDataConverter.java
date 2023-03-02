@@ -74,7 +74,6 @@ final class MerlinDataConverter
 			}
 			output.fullName = pathname.getPathname();
 			ZoneId dataZoneId = data.getTimeZone();
-			dataZoneId = ZoneId.of(dataZoneId.getId().replace("UTC-", "GMT-"));
 			output.setTimeZoneID(dataZoneId.getId());
 			output.locationTimezone = dataZoneId.getId();
 			output.units = data.getUnits();
@@ -94,7 +93,7 @@ final class MerlinDataConverter
 				int time = hecTime.value();
 				times[i] = time;
 				double value = Const.UNDEFINED_DOUBLE;
-				if (event.getValue() != null)
+				if (event.getValue() != null || event.getQuality() != 0)
 				{
 					value = event.getValue();
 				}

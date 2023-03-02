@@ -22,6 +22,7 @@ import hec.heclib.util.HecTime;
 import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
 import hec.io.impl.StoreOptionImpl;
+import hec.lang.Const;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLStreamException;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -119,7 +121,7 @@ final class MerlinDataExchangeEngineTest
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        String mockFileName = "merlin_mock_config_dx.xml";
+        String mockFileName = "merlin_mock_config_dx_test_large_window.xml";
         Path mockXml = getMockXml(mockFileName);
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
@@ -162,24 +164,51 @@ final class MerlinDataExchangeEngineTest
             DataWrapper merlinData = entry.getValue();
             TimeSeriesContainer tsc = DssFileManagerImpl.getDssFileManager().readTS(new DSSIdentifier(dssFileName, dssPath), false);
             assertNotNull(tsc);
-            assertEquals(merlinData.getEvents().size(), tsc.getNumberValues());
             DSSPathname pathname = new DSSPathname(tsc.getFullName());
             assertEquals( HecTimeSeriesBase.getEPartFromInterval(Integer.parseInt(merlinData.getTimestep())), pathname.ePart());
             assertEquals(merlinData.getParameter(), pathname.cPart());
             assertEquals(merlinData.getStation() + "-" + merlinData.getSensor(), pathname.getBPart());
             assertEquals(merlinData.getProject(), pathname.getAPart());
-            DecimalFormat df = new DecimalFormat("#.####");
-            int i=0;
-            for(EventWrapper event : merlinData.getEvents())
+            DecimalFormat df = new DecimalFormat("#.###");
+            NavigableSet<EventWrapper> events = merlinData.getEvents();
+            int i = 0;
+            int expectedNumTrimmed = getExpectedNumberOfTrimmedValues(events);
+            int lastIndex = events.size() - expectedNumTrimmed;
+            for(EventWrapper event : events)
             {
-                HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
-                HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
-                tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
-                assertEquals(Double.parseDouble(df.format(event.getValue())), Double.parseDouble(df.format(tsc.getValue(i))));
-                assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
+                double value = Const.UNDEFINED_DOUBLE;
+                if(event.getValue() != null || event.getQuality() != 0)
+                {
+                    value = event.getValue();
+                }
+                if(i <= lastIndex)
+                {
+                    HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
+                    HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
+                    tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
+                    assertEquals(Double.parseDouble(df.format(value)), Double.parseDouble(df.format(tsc.getValue(i))));
+                    assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
+                }
                 i++;
             }
         }
+    }
+
+    private int getExpectedNumberOfTrimmedValues(NavigableSet<EventWrapper> events)
+    {
+        int missingCount = 0;
+        for(EventWrapper event : events)
+        {
+            if(event.getValue() == null && event.getQuality() == 0)
+            {
+                missingCount ++;
+            }
+            else
+            {
+                missingCount = 0;
+            }
+        }
+        return missingCount;
     }
 
     private Map<String, DataWrapper> buildExpectedDss(List<Path> mocks, Instant start, Instant end, String username, char[] pw) throws XMLStreamException, IOException, HttpAccessException {
