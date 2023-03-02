@@ -23,6 +23,7 @@ import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
 import hec.io.impl.StoreOptionImpl;
 import hec.lang.Const;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLStreamException;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class MerlinDataExchangeEngineTest
 {
+
     @Test
     void testRunExtract() throws IOException, XMLStreamException, HttpAccessException
     {
@@ -102,14 +104,13 @@ final class MerlinDataExchangeEngineTest
             assertEquals(merlinData.getParameter(), pathname.cPart());
             assertEquals(merlinData.getStation() + "-" + merlinData.getSensor(), pathname.getBPart());
             assertEquals(merlinData.getProject(), pathname.getAPart());
-            DecimalFormat df = new DecimalFormat("#.####");
             int i=0;
             for(EventWrapper event : merlinData.getEvents())
             {
                 HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
                 HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
                 tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
-                assertEquals(Double.parseDouble(df.format(event.getValue())), Double.parseDouble(df.format(tsc.getValue(i))));
+                assertEquals(event.getValue(), tsc.getValue(i), 1.0E-4);
                 assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
                 i++;
             }
@@ -169,7 +170,6 @@ final class MerlinDataExchangeEngineTest
             assertEquals(merlinData.getParameter(), pathname.cPart());
             assertEquals(merlinData.getStation() + "-" + merlinData.getSensor(), pathname.getBPart());
             assertEquals(merlinData.getProject(), pathname.getAPart());
-            DecimalFormat df = new DecimalFormat("#.###");
             NavigableSet<EventWrapper> events = merlinData.getEvents();
             int i = 0;
             int expectedNumTrimmed = getExpectedNumberOfTrimmedValues(events);
@@ -177,7 +177,7 @@ final class MerlinDataExchangeEngineTest
             for(EventWrapper event : events)
             {
                 double value = Const.UNDEFINED_DOUBLE;
-                if(event.getValue() != null || event.getQuality() != 0)
+                if(event.getValue() != null)
                 {
                     value = event.getValue();
                 }
@@ -186,7 +186,7 @@ final class MerlinDataExchangeEngineTest
                     HecTime merlinTimeZulu = HecTime.fromZonedDateTime(event.getDate());
                     HecTime tscTimeZulu = tsc.getTimes().elementAt(i);
                     tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
-                    assertEquals(Double.parseDouble(df.format(value)), Double.parseDouble(df.format(tsc.getValue(i))));
+                    assertEquals(value, tsc.getValue(i), 1.0E-4);
                     assertEquals(merlinTimeZulu.date(), tscTimeZulu.date());
                 }
                 i++;
