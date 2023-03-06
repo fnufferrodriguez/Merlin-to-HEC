@@ -203,7 +203,7 @@ final class ParametersTest
                 .build();
         params = new MerlinParametersBuilder()
                 .fromExistingParameters(params)
-                .withUpdatedAuthenticationParameters(new AuthenticationParametersBuilder()
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
                         .forUrl("https://www.grabdata2.com")
                         .setUsername("userNew")
                         .andPassword("passwordNew".toCharArray())
@@ -216,6 +216,39 @@ final class ParametersTest
         assertEquals(params.getStoreOption(), storeOption);
         assertEquals(params.getFPartOverride(), "fPart");
         UsernamePasswordHolder usernamePassword = params.getUsernamePasswordForUrl("https://www.grabdata2.com");
+        assertEquals("userNew", usernamePassword.getUsername());
+        assertEquals("passwordNew", new String(usernamePassword.getPassword()));
+
+        params = new MerlinParametersBuilder()
+                .fromExistingParameters(params)
+                .build();
+        assertEquals(params.getWatershedDirectory(), workingDir);
+        assertEquals(params.getLogFileDirectory(), logDir);
+        assertEquals(params.getStart(), start);
+        assertEquals(params.getEnd(), end);
+        assertEquals(params.getStoreOption(), storeOption);
+        assertEquals(params.getFPartOverride(), "fPart");
+        usernamePassword = params.getUsernamePasswordForUrl("https://www.grabdata2.com");
+        assertEquals("userNew", usernamePassword.getUsername());
+        assertEquals("passwordNew", new String(usernamePassword.getPassword()));
+
+        storeOption.setRegular("1-replace-missing-values-only");
+        params = new MerlinParametersBuilder()
+                .fromExistingParameters(params)
+                .withWatershedDirectory(workingDir.resolve("changed"))
+                .withLogFileDirectory(workingDir.resolve("changedLog"))
+                .withStart(Instant.parse("2020-01-01T08:00:00Z"))
+                .withEnd(Instant.parse("2021-01-01T08:00:00Z"))
+                .withFPartOverride("fPartChanged")
+                .withStoreOption(storeOption)
+                .build();
+        assertEquals(params.getWatershedDirectory(), workingDir.resolve("changed"));
+        assertEquals(params.getLogFileDirectory(), workingDir.resolve("changedLog"));
+        assertEquals(params.getStart(), Instant.parse("2020-01-01T08:00:00Z"));
+        assertEquals(params.getEnd(), Instant.parse("2021-01-01T08:00:00Z"));
+        assertEquals(params.getStoreOption(), storeOption);
+        assertEquals(params.getFPartOverride(), "fPartChanged");
+        usernamePassword = params.getUsernamePasswordForUrl("https://www.grabdata2.com");
         assertEquals("userNew", usernamePassword.getUsername());
         assertEquals("passwordNew", new String(usernamePassword.getPassword()));
     }

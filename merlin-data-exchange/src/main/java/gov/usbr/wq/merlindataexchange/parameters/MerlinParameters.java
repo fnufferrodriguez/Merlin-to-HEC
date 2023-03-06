@@ -67,4 +67,9 @@ public final class MerlinParameters
                 .orElseThrow(() -> new UsernamePasswordNotFoundException(url))
                 .getUsernamePassword();
     }
+
+    List<AuthenticationParameters> getAuthenticationParameters()
+    {
+        return new ArrayList<>(_authenticationParameters);
+    }
 }

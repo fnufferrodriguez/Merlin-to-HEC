@@ -4,5 +4,5 @@ import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 
 public interface FluentFromExistingParameters
 {
-    FluentUpdatedAuthenticationParameters fromExistingParameters(MerlinParameters existingParameters);
+    FluentAlterParametersBuilder fromExistingParameters(MerlinParameters existingParameters);
 }

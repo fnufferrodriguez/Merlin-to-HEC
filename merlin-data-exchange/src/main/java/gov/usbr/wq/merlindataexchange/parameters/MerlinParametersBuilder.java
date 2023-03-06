@@ -1,12 +1,12 @@
 package gov.usbr.wq.merlindataexchange.parameters;
 
+import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentAlterParametersBuilder;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentAuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentFromExistingParameters;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentLogDirectory;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentParamatersBuilder;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentParametersNonRequiredBuilder;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentStoreOption;
-import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentUpdatedAuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentWatershedDirectory;
 import hec.io.StoreOption;
 
@@ -34,7 +34,7 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory, 
     }
 
     @Override
-    public FluentUpdatedAuthenticationParameters fromExistingParameters(MerlinParameters existingParameters)
+    public FluentAlterParametersBuilder fromExistingParameters(MerlinParameters existingParameters)
     {
         if(existingParameters == null)
         {
@@ -46,7 +46,8 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory, 
         _end = existingParameters.getEnd();
         _storeOption = existingParameters.getStoreOption();
         _fPartOverride = existingParameters.getFPartOverride();
-        return new MerlinUpdatedAuthenticationParameters();
+        _authenticationParametersList = existingParameters.getAuthenticationParameters();
+        return new MerlinAlteredParameters();
     }
 
     private class MerlinLogDirectory implements FluentLogDirectory
@@ -86,29 +87,70 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory, 
         }
     }
 
-    private class MerlinUpdatedAuthenticationParameters implements FluentUpdatedAuthenticationParameters
+    private class MerlinAlteredParameters extends MerlinParametersBuild implements FluentAlterParametersBuilder
     {
 
         @Override
-        public FluentParamatersBuilder withUpdatedAuthenticationParameters(AuthenticationParameters authenticationParameters)
+        public FluentAlterParametersBuilder withWatershedDirectory(Path watershedDirectory)
+        {
+            _watershedDirectory = Objects.requireNonNull(watershedDirectory, "Watershed directory must be specified, not null");
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withLogFileDirectory(Path logDirectory)
+        {
+            _logDirectory = Objects.requireNonNull(logDirectory, "Log file directory must be specified, not null");
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withStoreOption(StoreOption storeOption)
+        {
+            _storeOption = Objects.requireNonNull(storeOption, "Store option must be specified, not null");
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withAuthenticationParameters(AuthenticationParameters authenticationParameters)
         {
             if(authenticationParameters == null)
             {
                 throw new IllegalArgumentException("AuthenticationParameters must be specified, not null");
             }
-            _authenticationParametersList = Collections.singletonList(authenticationParameters);
-            return new MerlinParametersBuild();
+            return withAuthenticationParametersList(Collections.singletonList(authenticationParameters));
         }
 
         @Override
-        public FluentParamatersBuilder withUpdatedAuthenticationParametersList(List<AuthenticationParameters> authenticationParametersList)
+        public FluentAlterParametersBuilder withAuthenticationParametersList(List<AuthenticationParameters> authenticationParameters)
         {
-            if(authenticationParametersList == null || authenticationParametersList.isEmpty())
+            if(authenticationParameters == null)
             {
                 throw new IllegalArgumentException("AuthenticationParameters must be specified, not null");
             }
-            _authenticationParametersList = authenticationParametersList;
-            return new MerlinParametersBuild();
+            _authenticationParametersList = authenticationParameters;
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withStart(Instant start)
+        {
+            _start = start;
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withEnd(Instant end)
+        {
+            _end = end;
+            return this;
+        }
+
+        @Override
+        public FluentAlterParametersBuilder withFPartOverride(String fPartOverride)
+        {
+            _fPartOverride = fPartOverride;
+            return this;
         }
     }
 
