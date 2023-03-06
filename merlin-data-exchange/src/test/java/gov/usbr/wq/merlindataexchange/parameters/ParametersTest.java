@@ -177,5 +177,48 @@ final class ParametersTest
                 .build());
     }
 
+    @Test
+    void testBuildFromMerlinParameters() throws UsernamePasswordNotFoundException
+    {
+        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Instant start = Instant.parse("2019-01-01T08:00:00Z");
+        Instant end = Instant.parse("2022-08-30T08:00:00Z");
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        AuthenticationParameters authParams = new AuthenticationParametersBuilder()
+                .forUrl("https://www.grabdata2.com")
+                .setUsername("user")
+                .andPassword("password".toCharArray())
+                .build();
+        Path logDir = workingDir.resolve("log");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(workingDir)
+                .withLogFileDirectory(logDir)
+                .withAuthenticationParameters(authParams)
+                .withStoreOption(storeOption)
+                .withStart(start)
+                .withEnd(end)
+                .withFPartOverride("fPart")
+                .build();
+        params = new MerlinParametersBuilder()
+                .fromExistingParameters(params)
+                .withUpdatedAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com")
+                        .setUsername("userNew")
+                        .andPassword("passwordNew".toCharArray())
+                        .build())
+                .build();
+        assertEquals(params.getWatershedDirectory(), workingDir);
+        assertEquals(params.getLogFileDirectory(), logDir);
+        assertEquals(params.getStart(), start);
+        assertEquals(params.getEnd(), end);
+        assertEquals(params.getStoreOption(), storeOption);
+        assertEquals(params.getFPartOverride(), "fPart");
+        UsernamePasswordHolder usernamePassword = params.getUsernamePasswordForUrl("https://www.grabdata2.com");
+        assertEquals("userNew", usernamePassword.getUsername());
+        assertEquals("passwordNew", new String(usernamePassword.getPassword()));
+    }
+
 
 }

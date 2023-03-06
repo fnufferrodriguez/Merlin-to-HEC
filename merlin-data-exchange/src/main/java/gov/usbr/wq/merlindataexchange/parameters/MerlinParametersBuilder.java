@@ -1,9 +1,12 @@
 package gov.usbr.wq.merlindataexchange.parameters;
 
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentAuthenticationParameters;
+import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentFromExistingParameters;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentLogDirectory;
+import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentParamatersBuilder;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentParametersNonRequiredBuilder;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentStoreOption;
+import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentUpdatedAuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.FluentWatershedDirectory;
 import hec.io.StoreOption;
 
@@ -13,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public final class MerlinParametersBuilder implements FluentWatershedDirectory
+public final class MerlinParametersBuilder implements FluentWatershedDirectory, FluentFromExistingParameters
 {
     private Path _logDirectory;
     private List<AuthenticationParameters> _authenticationParametersList;
@@ -28,6 +31,22 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory
     {
         _watershedDirectory = Objects.requireNonNull(watershedDirectory, "Watershed directory must be specified, not null");
         return new MerlinLogDirectory();
+    }
+
+    @Override
+    public FluentUpdatedAuthenticationParameters fromExistingParameters(MerlinParameters existingParameters)
+    {
+        if(existingParameters == null)
+        {
+            throw new IllegalArgumentException("Missing required parameters to copy from");
+        }
+        _watershedDirectory = existingParameters.getWatershedDirectory();
+        _logDirectory = existingParameters.getLogFileDirectory();
+        _start = existingParameters.getStart();
+        _end = existingParameters.getEnd();
+        _storeOption = existingParameters.getStoreOption();
+        _fPartOverride = existingParameters.getFPartOverride();
+        return new MerlinUpdatedAuthenticationParameters();
     }
 
     private class MerlinLogDirectory implements FluentLogDirectory
@@ -67,6 +86,32 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory
         }
     }
 
+    private class MerlinUpdatedAuthenticationParameters implements FluentUpdatedAuthenticationParameters
+    {
+
+        @Override
+        public FluentParamatersBuilder withUpdatedAuthenticationParameters(AuthenticationParameters authenticationParameters)
+        {
+            if(authenticationParameters == null)
+            {
+                throw new IllegalArgumentException("AuthenticationParameters must be specified, not null");
+            }
+            _authenticationParametersList = Collections.singletonList(authenticationParameters);
+            return new MerlinParametersBuild();
+        }
+
+        @Override
+        public FluentParamatersBuilder withUpdatedAuthenticationParametersList(List<AuthenticationParameters> authenticationParametersList)
+        {
+            if(authenticationParametersList == null || authenticationParametersList.isEmpty())
+            {
+                throw new IllegalArgumentException("AuthenticationParameters must be specified, not null");
+            }
+            _authenticationParametersList = authenticationParametersList;
+            return new MerlinParametersBuild();
+        }
+    }
+
     private class MerlinStoreOption implements FluentStoreOption
     {
 
@@ -78,7 +123,7 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory
         }
     }
 
-    private class MerlinParametersNonRequiredBuilder implements FluentParametersNonRequiredBuilder
+    private class MerlinParametersNonRequiredBuilder extends MerlinParametersBuild implements FluentParametersNonRequiredBuilder
     {
 
         @Override
@@ -101,7 +146,10 @@ public final class MerlinParametersBuilder implements FluentWatershedDirectory
             _end = end;
             return this;
         }
+    }
 
+    private class MerlinParametersBuild implements FluentParamatersBuilder
+    {
         @Override
         public MerlinParameters build()
         {
