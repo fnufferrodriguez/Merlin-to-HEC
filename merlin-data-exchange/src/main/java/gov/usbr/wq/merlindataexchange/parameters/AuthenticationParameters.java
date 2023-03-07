@@ -12,9 +12,14 @@ public final class AuthenticationParameters
         _usernamePassword = usernamePassword;
     }
 
-    String getUrl()
+    public String getUrl()
     {
         return _url;
+    }
+
+    public String getUsername()
+    {
+        return _usernamePassword.getUsername();
     }
 
     UsernamePasswordHolder getUsernamePassword()
@@ -22,3 +27,4 @@ public final class AuthenticationParameters
         return _usernamePassword;
     }
 }
+
