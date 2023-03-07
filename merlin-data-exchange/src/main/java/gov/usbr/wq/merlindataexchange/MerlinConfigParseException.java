@@ -1,6 +1,7 @@
 package gov.usbr.wq.merlindataexchange;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.xml.sax.SAXException;
 
 import java.nio.file.Path;
 
@@ -26,7 +27,7 @@ public final class MerlinConfigParseException extends Exception
         }
         else
         {
-            retVal = e.getMessage();
+            retVal += ": " + e.getMessage();
         }
         return retVal;
     }
