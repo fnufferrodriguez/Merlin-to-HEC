@@ -160,24 +160,24 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             String fPartOverrideMsg = "DSS f-part override: " + (fPartOverride == null ? "Not Overridden" : fPartOverride);
             logImportantProgress(performedOnMsg);
             logImportantProgress(timeWindowMsg);
-            _fileLoggers.values().forEach(logger ->
-            {
-                logger.logToHeader(performedOnMsg);
-                logger.logToHeader(timeWindowMsg);
-                logger.logToHeader(studyDirMsg);
-                logger.logToHeader(logFileFirMsg);
-                logger.logToHeader(storeRuleMsg);
-                logger.logToHeader(fPartOverrideMsg);
-                for(AuthenticationParameters authParam : authParams)
-                {
-                    logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsernamePassword().getUsername());
-                }
-            });
             Map<Path, DataExchangeConfiguration> parsedConfigurations = parseConfigurations();
             MerlinDataExchangeStatus retVal = MerlinDataExchangeStatus.FAILURE;
             try
             {
                 setUpLoggingForConfigs(parsedConfigurations, _runtimeParameters.getLogFileDirectory());
+                _fileLoggers.values().forEach(logger ->
+                {
+                    logger.logToHeader(performedOnMsg);
+                    logger.logToHeader(timeWindowMsg);
+                    logger.logToHeader(studyDirMsg);
+                    logger.logToHeader(logFileFirMsg);
+                    logger.logToHeader(storeRuleMsg);
+                    logger.logToHeader(fPartOverrideMsg);
+                    for(AuthenticationParameters authParam : authParams)
+                    {
+                        logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsernamePassword().getUsername());
+                    }
+                });
                 List<ApiConnectionInfo> merlinRoots = getMerlinUrlPaths(parsedConfigurations.values());
                 for(ApiConnectionInfo connectionInfo : merlinRoots)
                 {
