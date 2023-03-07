@@ -17,8 +17,14 @@ public final class AuthenticationParameters
         return _url;
     }
 
-    public UsernamePasswordHolder getUsernamePassword()
+    public String getUsername()
+    {
+        return _usernamePassword.getUsername();
+    }
+
+    UsernamePasswordHolder getUsernamePassword()
     {
         return _usernamePassword;
     }
 }
+

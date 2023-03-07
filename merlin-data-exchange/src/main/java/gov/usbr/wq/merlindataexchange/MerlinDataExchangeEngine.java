@@ -175,7 +175,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                     logger.logToHeader(fPartOverrideMsg);
                     for(AuthenticationParameters authParam : authParams)
                     {
-                        logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsernamePassword().getUsername());
+                        logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsername());
                     }
                 });
                 List<ApiConnectionInfo> merlinRoots = getMerlinUrlPaths(parsedConfigurations.values());
