@@ -68,7 +68,7 @@ public final class MerlinParameters
                 .getUsernamePassword();
     }
 
-    List<AuthenticationParameters> getAuthenticationParameters()
+    public List<AuthenticationParameters> getAuthenticationParameters()
     {
         return new ArrayList<>(_authenticationParameters);
     }

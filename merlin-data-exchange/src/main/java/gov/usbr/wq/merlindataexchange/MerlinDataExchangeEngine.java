@@ -19,6 +19,7 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeReaderFactory;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriterFactory;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
+import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordNotFoundException;
@@ -27,7 +28,6 @@ import hec.ui.ProgressListener.MessageType;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -149,16 +149,35 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             String performedOnMsg = "Extract Performed on: " + MerlinLogDateFormatter.formatInstant(_extractStart);
             logImportantProgress(performedOnMsg);
             logImportantProgress(timeWindowMsg);
+            Path watershedDirectory = _runtimeParameters.getWatershedDirectory();
+            Path logFileDirectory = _runtimeParameters.getLogFileDirectory();
+            int regularStoreRule = _runtimeParameters.getStoreOption().getRegular();
+            String fPartOverride = _runtimeParameters.getFPartOverride();
+            List<AuthenticationParameters> authParams = _runtimeParameters.getAuthenticationParameters();
+            String studyDirMsg = "Study directory: " + watershedDirectory.toString();
+            String logFileFirMsg = "Log file directory: " + logFileDirectory.toString();
+            String storeRuleMsg = "Regular store rule: " + regularStoreRule;
+            String fPartOverrideMsg = "DSS f-part override: " + (fPartOverride == null ? "Not Overridden" : fPartOverride);
+            logImportantProgress(performedOnMsg);
+            logImportantProgress(timeWindowMsg);
+            _fileLoggers.values().forEach(logger ->
+            {
+                logger.logToHeader(performedOnMsg);
+                logger.logToHeader(timeWindowMsg);
+                logger.logToHeader(studyDirMsg);
+                logger.logToHeader(logFileFirMsg);
+                logger.logToHeader(storeRuleMsg);
+                logger.logToHeader(fPartOverrideMsg);
+                for(AuthenticationParameters authParam : authParams)
+                {
+                    logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsernamePassword().getUsername());
+                }
+            });
             Map<Path, DataExchangeConfiguration> parsedConfigurations = parseConfigurations();
             MerlinDataExchangeStatus retVal = MerlinDataExchangeStatus.FAILURE;
             try
             {
                 setUpLoggingForConfigs(parsedConfigurations, _runtimeParameters.getLogFileDirectory());
-                _fileLoggers.values().forEach(logger ->
-                {
-                    logger.logToHeader(performedOnMsg);
-                    logger.logToHeader(timeWindowMsg);
-                });
                 List<ApiConnectionInfo> merlinRoots = getMerlinUrlPaths(parsedConfigurations.values());
                 for(ApiConnectionInfo connectionInfo : merlinRoots)
                 {
@@ -303,7 +322,8 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
     }
 
     private void initializeCacheForMerlinUrlWithAuthentication(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions, UsernamePasswordHolder usernamePassword)
-            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException {
+            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException
+    {
         TokenContainer token;
         try
         {

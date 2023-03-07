@@ -12,12 +12,12 @@ public final class AuthenticationParameters
         _usernamePassword = usernamePassword;
     }
 
-    String getUrl()
+    public String getUrl()
     {
         return _url;
     }
 
-    UsernamePasswordHolder getUsernamePassword()
+    public UsernamePasswordHolder getUsernamePassword()
     {
         return _usernamePassword;
     }
