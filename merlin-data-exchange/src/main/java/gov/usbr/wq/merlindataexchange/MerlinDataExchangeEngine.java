@@ -383,6 +383,8 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             MerlinDataExchangeLogger logFileLogger = _fileLoggers.get(configPath);
             String logMessage = "Running Extract for config: " + configPath;
             logImportantProgress(logMessage);
+            String logFileMessage = "Logging extract to: " + logFileLogger.getLogFile();
+            logImportantProgress(logFileMessage);
             MerlinDataExchangeLogBody logBody = new MerlinDataExchangeLogBody();
             logBody.log(logMessage);
             logFileLogger.logBody(logBody);
