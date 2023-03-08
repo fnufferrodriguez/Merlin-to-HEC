@@ -6,7 +6,6 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -20,7 +19,7 @@ final class MerlinDataExchangeParserTest
     @Test
     void testParseXmlFile() throws IOException, MerlinConfigParseException
     {
-        Path mockXml = getMockXml();
+        Path mockXml = getMockXml("merlin_mock_dx_partial_complete_multi_timestep.xml");
         DataExchangeConfiguration dataExchangeConfig = MerlinDataExchangeParser.parseXmlFile(mockXml);
         assertNotNull(dataExchangeConfig);
         List<DataExchangeSet> tsDataExchangeSets = dataExchangeConfig.getDataExchangeSets();
@@ -70,9 +69,123 @@ final class MerlinDataExchangeParserTest
         assertEquals("wat2", localDssRef2.getId());
     }
 
-    private Path getMockXml() throws IOException
+    @Test
+    void testInvalidXmls()
     {
-        String resource = "gov/usbr/wq/merlindataexchange/merlin_mock_dx_partial_complete_multi_timestep.xml";
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_a_dx.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_b_dx.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_path_dx.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_type_dx.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_no_matching_datastore_for_ref_dx.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_missing_datasets.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_missing_datastores.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+
+        });
+        assertThrows(MerlinConfigParseException.class, () ->
+        {
+            try
+            {
+                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_bad_config.xml"));
+            }
+            catch (MerlinConfigParseException e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("-------------------------------------------------------------------");
+                throw e;
+            }
+
+        });
+    }
+
+    private Path getMockXml(String xmlFileName) throws IOException
+    {
+        String resource = "gov/usbr/wq/merlindataexchange/" + xmlFileName;
         URL resourceUrl = getClass().getClassLoader().getResource(resource);
         if (resourceUrl == null)
         {
