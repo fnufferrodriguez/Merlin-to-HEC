@@ -281,7 +281,7 @@ final class MerlinDataExchangeEngineTest
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        Path mockXml = getMockXml("merlin_mock_bad_config.xml");
+        Path mockXml = getMockXml("invalidxmls/merlin_mock_bad_config.xml");
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
@@ -316,7 +316,7 @@ final class MerlinDataExchangeEngineTest
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        Path mockXml = getMockXml("merlin_mock_missing_datasets.xml");
+        Path mockXml = getMockXml("invalidxmls/merlin_mock_missing_datasets.xml");
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
@@ -351,7 +351,7 @@ final class MerlinDataExchangeEngineTest
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        Path mockXml = getMockXml("merlin_mock_missing_datastores.xml");
+        Path mockXml = getMockXml("invalidxmls/merlin_mock_missing_datastores.xml");
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2019-01-01T08:00:00Z");

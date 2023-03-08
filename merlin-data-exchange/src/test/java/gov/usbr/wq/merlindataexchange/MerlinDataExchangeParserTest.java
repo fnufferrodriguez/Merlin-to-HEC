@@ -9,9 +9,12 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MerlinDataExchangeParserTest
@@ -70,117 +73,39 @@ final class MerlinDataExchangeParserTest
     }
 
     @Test
-    void testInvalidXmls()
+    void testInvalidXmls() throws IOException
     {
-        assertThrows(MerlinConfigParseException.class, () ->
+        try(Stream<Path> invalidXmlPath = Files.list(getInvalidMockXMlFolder()))
         {
-            try
+            List<File> invalidXmlFiles = invalidXmlPath
+                    .map(Path::toFile)
+                    .filter(File::isFile)
+                    .collect(toList());
+            invalidXmlFiles.forEach(file -> assertThrows(MerlinConfigParseException.class, () ->
             {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_a_dx.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
+                try
+                {
+                    MerlinDataExchangeParser.parseXmlFile(file.toPath());
+                }
+                catch (MerlinConfigParseException e)
+                {
+                    System.out.println(e.getMessage());
+                    System.out.println("-------------------------------------------------------------------");
+                    throw e;
+                }
+            }));
+        }
+    }
 
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
+    private Path getInvalidMockXMlFolder() throws IOException
+    {
+        String resource = "gov/usbr/wq/merlindataexchange/invalidxmls/";
+        URL resourceUrl = getClass().getClassLoader().getResource(resource);
+        if (resourceUrl == null)
         {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_b_dx.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_path_dx.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_missing_datastore_type_dx.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_config_no_matching_datastore_for_ref_dx.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_missing_datasets.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_missing_datastores.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-
-        });
-        assertThrows(MerlinConfigParseException.class, () ->
-        {
-            try
-            {
-                MerlinDataExchangeParser.parseXmlFile(getMockXml("merlin_mock_bad_config.xml"));
-            }
-            catch (MerlinConfigParseException e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("-------------------------------------------------------------------");
-                throw e;
-            }
-
-        });
+            throw new IOException("Failed to get resource: " + resource);
+        }
+        return new File(resourceUrl.getFile()).toPath();
     }
 
     private Path getMockXml(String xmlFileName) throws IOException
