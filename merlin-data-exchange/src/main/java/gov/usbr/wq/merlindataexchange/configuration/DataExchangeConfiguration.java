@@ -19,7 +19,7 @@ public final class DataExchangeConfiguration
         return _dataStores;
     }
 
-    public void setDataStoresMerlin(List<DataStore> dataStores)
+    public void setDataStores(List<DataStore> dataStores)
     {
         _dataStores = dataStores;
     }

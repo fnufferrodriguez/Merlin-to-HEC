@@ -6,13 +6,15 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MerlinDataExchangeParserTest
@@ -20,7 +22,7 @@ final class MerlinDataExchangeParserTest
     @Test
     void testParseXmlFile() throws IOException, MerlinConfigParseException
     {
-        Path mockXml = getMockXml();
+        Path mockXml = getMockXml("merlin_mock_dx_partial_complete_multi_timestep.xml");
         DataExchangeConfiguration dataExchangeConfig = MerlinDataExchangeParser.parseXmlFile(mockXml);
         assertNotNull(dataExchangeConfig);
         List<DataExchangeSet> tsDataExchangeSets = dataExchangeConfig.getDataExchangeSets();
@@ -70,9 +72,45 @@ final class MerlinDataExchangeParserTest
         assertEquals("wat2", localDssRef2.getId());
     }
 
-    private Path getMockXml() throws IOException
+    @Test
+    void testInvalidXmls() throws IOException
     {
-        String resource = "gov/usbr/wq/merlindataexchange/merlin_mock_dx_partial_complete_multi_timestep.xml";
+        try(Stream<Path> invalidXmlPath = Files.list(getInvalidMockXMlFolder()))
+        {
+            List<File> invalidXmlFiles = invalidXmlPath
+                    .map(Path::toFile)
+                    .filter(File::isFile)
+                    .collect(toList());
+            invalidXmlFiles.forEach(file -> assertThrows(MerlinConfigParseException.class, () ->
+            {
+                try
+                {
+                    MerlinDataExchangeParser.parseXmlFile(file.toPath());
+                }
+                catch (MerlinConfigParseException e)
+                {
+                    System.out.println(e.getMessage());
+                    System.out.println("-------------------------------------------------------------------");
+                    throw e;
+                }
+            }));
+        }
+    }
+
+    private Path getInvalidMockXMlFolder() throws IOException
+    {
+        String resource = "gov/usbr/wq/merlindataexchange/invalidxmls/";
+        URL resourceUrl = getClass().getClassLoader().getResource(resource);
+        if (resourceUrl == null)
+        {
+            throw new IOException("Failed to get resource: " + resource);
+        }
+        return new File(resourceUrl.getFile()).toPath();
+    }
+
+    private Path getMockXml(String xmlFileName) throws IOException
+    {
+        String resource = "gov/usbr/wq/merlindataexchange/" + xmlFileName;
         URL resourceUrl = getClass().getClassLoader().getResource(resource);
         if (resourceUrl == null)
         {
