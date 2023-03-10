@@ -19,6 +19,7 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeReaderFactory;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriterFactory;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
+import gov.usbr.wq.merlindataexchange.io.QualityVersionFromSetUtil;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
@@ -26,7 +27,6 @@ import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordNotFoundExcepti
 import hec.ui.ProgressListener;
 import hec.ui.ProgressListener.MessageType;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -481,14 +481,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         try
         {
             TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreSource);
-            if(template == null)
-            {
-                template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreDestination);
-            }
-            if(template == null)
-            {
-                throw new UnsupportedTemplateException(dataExchangeSet.getTemplateName(), dataExchangeSet.getTemplateId());
-            }
             DataExchangeReader reader = DataExchangeReaderFactory.lookupReader(dataStoreSource);
             DataExchangeWriter writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination);
             reader.initialize(dataStoreSource, _runtimeParameters);
@@ -517,6 +509,19 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 logGeneralProgress(fromMsg);
                 logGeneralProgress(toMsg);
                 logGeneralProgress(detailsMsg);
+                if(template == null)
+                {
+                    template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreDestination);
+                }
+                if(template == null)
+                {
+                    throw new UnsupportedTemplateException(dataExchangeSet.getTemplateName(), dataExchangeSet.getTemplateId());
+                }
+                Optional<QualityVersionWrapper> qualityVersion = QualityVersionFromSetUtil.getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache);
+                if(!qualityVersion.isPresent())
+                {
+                    throw new UnsupportedQualityVersionException(dataExchangeSet.getQualityVersionName(), dataExchangeSet.getQualityVersionId());
+                }
                 List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
                 List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
                 try
@@ -533,10 +538,11 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 }
             }
         }
-        catch (DataExchangeLookupException | UnsupportedTemplateException e)
+        catch (DataExchangeLookupException | UnsupportedTemplateException | UnsupportedQualityVersionException e)
         {
-            logError("Lookup failed!", e);
-            logBody.log("Error Occurred: " + e.getMessage());
+            _completionTracker.addNumberOfMeasuresToComplete(1);
+            logError(e.getMessage(), e);
+            logBody.log(e.getMessage());
         }
     }
 
@@ -664,11 +670,13 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             List<DataExchangeSet> exchangeSets = dataExchangeConfig.getDataExchangeSets();
             for(DataExchangeSet set : exchangeSets)
             {
-                TemplateWrapper template = cache.getCachedTemplates().stream()
+                Optional<TemplateWrapper> templateOpt = cache.getCachedTemplates().stream()
                         .filter(t -> t.getName().equals(set.getTemplateName()) || t.getDprId().equals(set.getTemplateId()))
-                        .findFirst()
-                        .orElseThrow(() -> new UnsupportedTemplateException(set.getTemplateName(), set.getTemplateId()));
-                boolean alreadyCached = cache.getCachedTemplateToMeasures().containsKey(template);
+                        .findFirst();
+                if(templateOpt.isPresent())
+                {
+                    TemplateWrapper template = templateOpt.get();
+                    boolean alreadyCached = cache.getCachedTemplateToMeasures().containsKey(template);
                     List<MeasureWrapper> measures;
                     if(!alreadyCached)
                     {
@@ -680,6 +688,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                         measures = cache.getCachedTemplateToMeasures().get(template);
                     }
                     _completionTracker.addNumberOfMeasuresToComplete(measures.size());
+                }
             }
         }
 
