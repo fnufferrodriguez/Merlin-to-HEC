@@ -19,6 +19,7 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeReaderFactory;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriterFactory;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
+import gov.usbr.wq.merlindataexchange.io.QualityVersionFromSetUtil;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
@@ -516,7 +517,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                 {
                     throw new UnsupportedTemplateException(dataExchangeSet.getTemplateName(), dataExchangeSet.getTemplateId());
                 }
-                Optional<QualityVersionWrapper> qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache);
+                Optional<QualityVersionWrapper> qualityVersion = QualityVersionFromSetUtil.getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache);
                 if(!qualityVersion.isPresent())
                 {
                     throw new UnsupportedQualityVersionException(dataExchangeSet.getQualityVersionName(), dataExchangeSet.getQualityVersionId());
@@ -623,23 +624,6 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                         .findFirst()
                         .orElse(null);
             }
-        }
-        return retVal;
-    }
-
-    private Optional<QualityVersionWrapper> getQualityVersionIdFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataExchangeCache cache)
-    {
-        String qualityVersionNameFromSet = dataExchangeSet.getQualityVersionName();
-        Integer qualityVersionIdFromSet = dataExchangeSet.getQualityVersionId();
-        List<QualityVersionWrapper> qualityVersions = cache.getCachedQualityVersions();
-        Optional<QualityVersionWrapper> retVal = qualityVersions.stream()
-                .filter(qualityVersion -> qualityVersion.getQualityVersionName().equalsIgnoreCase(qualityVersionNameFromSet))
-                .findFirst();
-        if(!retVal.isPresent())
-        {
-            retVal = qualityVersions.stream()
-                    .filter(qualityVersion -> qualityVersion.getQualityVersionID().intValue() == qualityVersionIdFromSet)
-                    .findFirst();
         }
         return retVal;
     }

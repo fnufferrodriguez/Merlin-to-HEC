@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -54,7 +55,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
         Instant start = runtimeParameters.getStart();
         Instant end = runtimeParameters.getEnd();
         String fPartOverride = runtimeParameters.getFPartOverride();
-        QualityVersionWrapper qualityVersion = getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache).orElse(null);
+        QualityVersionWrapper qualityVersion = QualityVersionFromSetUtil.getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache).orElse(null);
         String unitSystemToConvertTo = dataExchangeSet.getUnitSystem();
         Integer qualityVersionId = qualityVersion == null ? null : qualityVersion.getQualityVersionID();
         return CompletableFuture.supplyAsync(() ->
@@ -211,23 +212,6 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             {
                 logError(progressListener, logFileLogger, "Failed to retrieve data for measure with series string: " + measure.getSeriesString(), ex);
             }
-        }
-        return retVal;
-    }
-
-    private Optional<QualityVersionWrapper> getQualityVersionIdFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataExchangeCache cache)
-    {
-        String qualityVersionNameFromSet = dataExchangeSet.getQualityVersionName();
-        Integer qualityVersionIdFromSet = dataExchangeSet.getQualityVersionId();
-        List<QualityVersionWrapper> qualityVersions = cache.getCachedQualityVersions();
-        Optional<QualityVersionWrapper> retVal = qualityVersions.stream()
-                .filter(qualityVersion -> qualityVersion.getQualityVersionName().equalsIgnoreCase(qualityVersionNameFromSet))
-                .findFirst();
-        if(!retVal.isPresent())
-        {
-            retVal = qualityVersions.stream()
-                    .filter(qualityVersion -> qualityVersion.getQualityVersionID().intValue() == qualityVersionIdFromSet)
-                    .findFirst();
         }
         return retVal;
     }
