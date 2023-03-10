@@ -499,7 +499,17 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
             {
                 String fromMsg = "Reading from: " + reader.getSourcePath();
                 String toMsg = "Writing to: " + writer.getDestinationPath();
-                String detailsMsg = "Template: " + dataExchangeSet.getTemplateName() + " | Specified quality version: " + dataExchangeSet.getQualityVersionName()
+                String templateMsg = dataExchangeSet.getTemplateName();
+                if(templateMsg == null)
+                {
+                    templateMsg = "" + dataExchangeSet.getTemplateId();
+                }
+                String qualityVersionMsg = dataExchangeSet.getQualityVersionName();
+                if(qualityVersionMsg == null)
+                {
+                    qualityVersionMsg = "" + dataExchangeSet.getQualityVersionId();
+                }
+                String detailsMsg = "Template: " + templateMsg + " | Specified quality version: " + qualityVersionMsg
                         + " | Specified unit system: " + dataExchangeSet.getUnitSystem();
                 logBody.log(fromMsg);
                 logBody.log(toMsg);
