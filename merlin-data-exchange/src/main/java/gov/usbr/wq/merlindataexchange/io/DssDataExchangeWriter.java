@@ -52,7 +52,15 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             int percentComplete = completionTracker.readTaskCompleted();
             logProgress(progressListener, progressMsg, percentComplete);
             timeSeriesContainer.fileName = _dssWritePath.toString();
-            int success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
+            int success;
+            if(runtimeParameters.getStoreOption().getRegular() == 0)
+            {
+                 success = DssFileManagerImpl.getDssFileManager().write(timeSeriesContainer);
+            }
+            else
+            {
+                success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
+            }
             if(success == 0)
             {
                 String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString;
