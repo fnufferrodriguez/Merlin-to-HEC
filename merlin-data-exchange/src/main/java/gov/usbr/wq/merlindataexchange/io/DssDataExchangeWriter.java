@@ -27,8 +27,8 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
 {
     public static final String DSS = "dss";
     private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
-    private static final String MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.dss.singlethread";
-
+    public static final String MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.dss.singlethread";
+    private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
     @Override
     public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, MerlinParameters runtimeParameters, DataStore destinationDataStore,
                                        MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
@@ -38,13 +38,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         if(timeSeriesContainer != null && !isCancelled.get())
         {
             timeSeriesContainer.fileName = dssWritePath.toString();
-            String useSingleThreadString = System.getProperty(MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY);
-            boolean useSingleThreading = true;
-            if(useSingleThreadString != null)
-            {
-                LOGGER.log(Level.FINE, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY + " set to: " + useSingleThreadString);
-                useSingleThreading = Boolean.parseBoolean(useSingleThreadString);
-            }
+            boolean useSingleThreading = isSingleThreaded();
             int success;
             if(useSingleThreading)
             {
@@ -81,6 +75,27 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             }
             DssFileManagerImpl.getDssFileManager().close(dssWritePath.toString());
         }
+    }
+
+    private boolean isSingleThreaded()
+    {
+        String useSingleThreadString = System.getProperty(MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY);
+
+        boolean useSingleThreading = false;
+        if(useSingleThreadString != null)
+        {
+            if(!_loggedThreadProperty.getAndSet(true))
+            {
+                LOGGER.log(Level.INFO, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY + " set to: " + useSingleThreadString);
+            }
+            useSingleThreading = Boolean.parseBoolean(useSingleThreadString);
+        }
+        else if(!_loggedThreadProperty.getAndSet(true))
+        {
+            LOGGER.log(Level.INFO, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY
+                    + " is not set. Defaulting to : " + useSingleThreadString);
+        }
+        return useSingleThreading;
     }
 
     private int writeDss(TimeSeriesContainer timeSeriesContainer, MerlinParameters runtimeParameters, MeasureWrapper measure,
