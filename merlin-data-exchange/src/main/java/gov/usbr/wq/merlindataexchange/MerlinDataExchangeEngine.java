@@ -212,7 +212,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }, _executorService);
     }
 
-    private synchronized void logCompletion(MerlinDataExchangeStatus retVal)
+    private void logCompletion(MerlinDataExchangeStatus retVal)
     {
         Instant endTime = Instant.now();
         String finishedTimeMsg = "Ended at: " + MerlinLogDateFormatter.formatInstant(endTime);
@@ -240,7 +240,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }
     }
 
-    private synchronized void logCompletionProgress(String completionMessage)
+    private void logCompletionProgress(String completionMessage)
     {
         if (_progressListener != null)
         {
@@ -536,7 +536,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }
     }
 
-    private synchronized void logImportantProgress(String message)
+    private void logImportantProgress(String message)
     {
         if(!_isCancelled.get())
         {
@@ -549,7 +549,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
 
     }
 
-    private synchronized void logGeneralProgress(String message)
+    private void logGeneralProgress(String message)
     {
         if(!_isCancelled.get())
         {
@@ -562,7 +562,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
 
     }
 
-    private synchronized void logGeneralProgress(String message, int progressPercentage)
+    private void logGeneralProgress(String message, int progressPercentage)
     {
         if(!_isCancelled.get())
         {
@@ -574,7 +574,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
         }
     }
 
-    private synchronized void logError(String message, Throwable error)
+    private void logError(String message, Throwable error)
     {
         if(!_isCancelled.get())
         {
@@ -671,7 +671,7 @@ public final class MerlinDataExchangeEngine implements DataExchangeEngine
                     if(!alreadyCached)
                     {
                         measures = _merlinDataAccess.getMeasurementsByTemplate(connectionInfo, token, template);
-                        cache.cacheSeriesIds(template, measures);
+                        cache.cacheMeasures(template, measures);
                     }
                     else
                     {

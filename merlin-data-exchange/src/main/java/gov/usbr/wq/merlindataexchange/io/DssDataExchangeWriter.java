@@ -6,7 +6,6 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
-import hec.data.DataSetIllegalArgumentException;
 import hec.heclib.dss.DSSPathname;
 import hec.io.StoreOption;
 import hec.io.TimeSeriesContainer;
@@ -40,7 +39,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         {
             timeSeriesContainer.fileName = dssWritePath.toString();
             String useSingleThreadString = System.getProperty(MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY);
-            boolean useSingleThreading = false;
+            boolean useSingleThreading = true;
             if(useSingleThreadString != null)
             {
                 LOGGER.log(Level.FINE, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY + " set to: " + useSingleThreadString);
@@ -61,7 +60,8 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             if(success == 0)
             {
                 String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString;
-                int percentCompleteAfterWrite = completionTracker.writeTaskCompleted();
+                int percentCompleteAfterWrite = completionTracker.readWriteTaskCompleted();
+                completionTracker.writeTaskCompleted();
                 if(progressListener != null)
                 {
                     progressListener.progress(successMsg, MessageType.GENERAL, percentCompleteAfterWrite);
@@ -95,7 +95,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         String progressMsg = "Read " + measure.getSeriesString() + " | Is processed: " + measure.isProcessed() + " | Values read: " + timeSeriesContainer.getNumberValues()
                 + ", " + numTrimmedValues + " missing, " +  numExpected + " expected" ;
         logFileLogger.log(progressMsg);
-        int percentComplete = completionTracker.readTaskCompleted();
+        int percentComplete = completionTracker.readWriteTaskCompleted();
         logProgress(progressListener, progressMsg, percentComplete);
 
         //write(timeseriesContainer) uses store option zero, so this ensures correct functionality for regular store flag 0
@@ -141,23 +141,12 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         return xmlFilePath;
     }
 
-    private synchronized void logProgress(ProgressListener progressListener, String message, int percentComplete)
+    private void logProgress(ProgressListener progressListener, String message, int percentComplete)
     {
         if(progressListener != null)
         {
             progressListener.progress(message, MessageType.GENERAL, percentComplete);
         }
     }
-
-    private synchronized void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, DataSetIllegalArgumentException e)
-    {
-        if(progressListener != null)
-        {
-            progressListener.progress(errorMsg, MessageType.ERROR);
-        }
-        logFileLogger.log(errorMsg);
-        LOGGER.log(Level.CONFIG, e, () -> errorMsg);
-    }
-
 
 }
