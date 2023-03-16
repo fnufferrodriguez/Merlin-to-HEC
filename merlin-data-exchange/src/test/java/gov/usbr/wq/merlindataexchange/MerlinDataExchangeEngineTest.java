@@ -67,10 +67,6 @@ final class MerlinDataExchangeEngineTest
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
-        if(Files.exists(dssFile))
-        {
-            Files.delete(dssFile);
-        }
         Instant start = Instant.parse("2003-02-01T12:00:00Z");
         Instant end = Instant.parse("2022-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
@@ -153,10 +149,6 @@ final class MerlinDataExchangeEngineTest
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
-        if(Files.exists(dssFile))
-        {
-            Files.delete(dssFile);
-        }
         Instant start = Instant.parse("2003-02-01T12:00:00Z");
         Instant end = Instant.parse("2022-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
@@ -198,10 +190,6 @@ final class MerlinDataExchangeEngineTest
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
-        if(Files.exists(dssFile))
-        {
-            Files.delete(dssFile);
-        }
         Instant start = Instant.parse("2003-02-01T12:00:00Z");
         Instant end = Instant.parse("2022-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
