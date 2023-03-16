@@ -84,11 +84,12 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         boolean useSingleThreading = false;
         if(useSingleThreadString != null)
         {
+            useSingleThreading = Boolean.parseBoolean(useSingleThreadString);
             if(!_loggedThreadProperty.getAndSet(true))
             {
-                LOGGER.log(Level.CONFIG, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY + " set to: " + useSingleThreadString);
+                boolean actualValue = useSingleThreading;
+                LOGGER.log(Level.CONFIG, () -> "Merlin to dss write with single thread using System Property " + MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY + " set to: " + actualValue);
             }
-            useSingleThreading = Boolean.parseBoolean(useSingleThreadString);
         }
         else if(!_loggedThreadProperty.getAndSet(true))
         {
