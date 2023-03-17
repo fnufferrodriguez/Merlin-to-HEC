@@ -16,6 +16,7 @@ import rma.services.annotations.ServiceProvider;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -31,7 +32,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
     @Override
     public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, MerlinParameters runtimeParameters, DataStore destinationDataStore,
-                                       MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
+                          MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, Instant readStart)
     {
         Path dssWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         String seriesString = measure.getSeriesString();
@@ -40,20 +41,23 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             timeSeriesContainer.fileName = dssWritePath.toString();
             boolean useSingleThreading = isSingleThreaded();
             int success;
+            Instant writeStart;
             if(useSingleThreading)
             {
                 try(CloseableReentrantLock lock = ReadWriteLockManager.getInstance().getCloseableLock().lockIt())
                 {
-                    success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener);
+                    writeStart = Instant.now();
+                    success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener, readStart);
                 }
             }
             else
             {
-                success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener);
+                writeStart = Instant.now();
+                success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener, readStart);
             }
             if(success == 0)
             {
-                String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString;
+                String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString + ReadWriteTimestampUtil.getDuration(writeStart, Instant.now());
                 int percentCompleteAfterWrite = completionTracker.readWriteTaskCompleted();
                 completionTracker.writeTaskCompleted();
                 if(progressListener != null)
@@ -101,7 +105,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     }
 
     private int writeDss(TimeSeriesContainer timeSeriesContainer, MerlinParameters runtimeParameters, MeasureWrapper measure,
-                         MerlinExchangeCompletionTracker completionTracker, MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener)
+                         MerlinExchangeCompletionTracker completionTracker, MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener, Instant readStart)
     {
         int success;
         StoreOption storeOption = runtimeParameters.getStoreOption();
@@ -110,11 +114,10 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         int numExpected = ExpectedNumberValuesCalculator.getExpectedNumValues(runtimeParameters.getStart(), runtimeParameters.getEnd(), pathname.ePart(),
                 ZoneId.of(timeSeriesContainer.getTimeZoneID()), timeSeriesContainer.getStartTime(), timeSeriesContainer.getEndTime());
         String progressMsg = "Read " + measure.getSeriesString() + " | Is processed: " + measure.isProcessed() + " | Values read: " + timeSeriesContainer.getNumberValues()
-                + ", " + numTrimmedValues + " missing, " +  numExpected + " expected" ;
+                + ", " + numTrimmedValues + " missing, " +  numExpected + " expected" + ReadWriteTimestampUtil.getDuration(readStart, Instant.now());
         logFileLogger.log(progressMsg);
         int percentComplete = completionTracker.readWriteTaskCompleted();
         logProgress(progressListener, progressMsg, percentComplete);
-
         //write(timeseriesContainer) uses store option zero, so this ensures correct functionality for regular store flag 0
         //writeTS has a bug in its current state that can cause dss to write to wrong file. Once fixed, this conditional check won't be needed
         if(runtimeParameters.getStoreOption().getRegular() == 0)

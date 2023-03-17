@@ -22,6 +22,7 @@ final class RunExtractScaleTest {
     {
         try
         {
+            System.setProperty(MerlinDataExchangeEngine.READ_WRITE_TIMESTAMP_PROPERTY, "True");
             String workingDir = System.getProperty("user.dir");
             String libsDir = workingDir + "/build/libs";
             System.setProperty("java.library.path", libsDir);

@@ -9,6 +9,7 @@ import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import hec.ui.ProgressListener;
 
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,10 +28,11 @@ public final class DataExchangeIO
         CompletableFuture<Void> retVal = new CompletableFuture<>();
         if(!isCancelled.get())
         {
+            Instant readStart = Instant.now();
             retVal = reader.readData(dataExchangeSet, runtimeParameters, source, cache, measure,
-                            completionTracker, progressListener, isCancelled, logger, executorService)
+                            completionTracker, progressListener, isCancelled, logger, executorService, readStart)
                     .thenAcceptAsync(tsc ->
-                        writer.writeData(tsc, measure, runtimeParameters, destination, completionTracker, progressListener, logger, isCancelled), executorService);
+                        writer.writeData(tsc, measure, runtimeParameters, destination, completionTracker, progressListener, logger, isCancelled, readStart), executorService);
 
 
         }

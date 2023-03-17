@@ -45,7 +45,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     @Override
     public CompletableFuture<TimeSeriesContainer> readData(DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataExchangeCache cache,
                                                            MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, AtomicBoolean isCancelled,
-                                                           MerlinDataExchangeLogBody logFileLogger, ExecutorService executorService)
+                                                           MerlinDataExchangeLogBody logFileLogger, ExecutorService executorService, Instant readStart)
     {
         String merlinApiRoot = getSourcePath(sourceDataStore, runtimeParameters);
         Instant start = runtimeParameters.getStart();
@@ -61,7 +61,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             {
                 UsernamePasswordHolder usernamePassword = runtimeParameters.getUsernamePasswordForUrl(merlinApiRoot);
                 retVal = retrieveDataAsTimeSeries(usernamePassword, start, end, merlinApiRoot, measure, qualityVersionId, progressListener, logFileLogger,
-                        isCancelled, fPartOverride, unitSystemToConvertTo, completionTracker, measure.isProcessed());
+                        isCancelled, fPartOverride, unitSystemToConvertTo, completionTracker, measure.isProcessed(), readStart);
             }
             catch (UsernamePasswordNotFoundException e)
             {
@@ -82,7 +82,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     private TimeSeriesContainer retrieveDataAsTimeSeries(UsernamePasswordHolder usernamePassword, Instant start, Instant end, String merlinApiRoot, MeasureWrapper measure, Integer qualityVersionId,
                                                          ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                          AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo, MerlinExchangeCompletionTracker completionTracker,
-                                                         Boolean isProcessed)
+                                                         Boolean isProcessed, Instant readStartTime)
     {
         TimeSeriesContainer retVal = null;
         try
@@ -102,7 +102,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
             }
             else if(!isCancelled.get())
             {
-                retVal = convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger, completionTracker, isProcessed, start, end);
+                retVal = convertToTsc(data, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger, completionTracker, isProcessed, start, end, readStartTime);
             }
         }
         catch (HttpAccessException e)
@@ -114,7 +114,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
     }
 
     private TimeSeriesContainer convertToTsc(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
-                                             MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, Instant start, Instant end)
+                                             MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, Instant start, Instant end, Instant readStartTime)
     {
         TimeSeriesContainer retVal = null;
         try
@@ -145,7 +145,7 @@ public final class MerlinDataExchangeReader implements DataExchangeReader
                     HecTimeSeriesBase.getEPartFromInterval(Integer.parseInt(data.getTimestep())), zoneId,
                     HecTime.fromZonedDateTime(ZonedDateTime.ofInstant(start, zoneId)), HecTime.fromZonedDateTime(ZonedDateTime.ofInstant(end, zoneId)));
             String progressMsg = "Read " + data.getSeriesId() + " | Is processed: " + isProcessed + " | Values read: 0"
-                    + ", 0 missing, " + expectedNumValues + " expected";
+                    + ", 0 missing, " + expectedNumValues + " expected" + ReadWriteTimestampUtil.getDuration(readStartTime, Instant.now());
             String noDataMsg = e.getMessage();
             //when no data is found we count it as a read + no data written completed and move on, but want to ensure these get written together.
             int readPercentIncrement = completionTracker.readWriteTaskCompleted();

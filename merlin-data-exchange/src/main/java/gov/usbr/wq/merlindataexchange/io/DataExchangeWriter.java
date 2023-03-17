@@ -8,6 +8,7 @@ import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface DataExchangeWriter extends DataExchanger
@@ -16,7 +17,7 @@ public interface DataExchangeWriter extends DataExchanger
     String LOOKUP_PATH = "dataexchange/reader";
 
     void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper seriesPath, MerlinParameters runtimeParameters, DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker,
-                   ProgressListener progressListener, MerlinDataExchangeLogBody logger, AtomicBoolean isCancelled);
+                   ProgressListener progressListener, MerlinDataExchangeLogBody logger, AtomicBoolean isCancelled, Instant readStart);
 
     String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters);
 }
