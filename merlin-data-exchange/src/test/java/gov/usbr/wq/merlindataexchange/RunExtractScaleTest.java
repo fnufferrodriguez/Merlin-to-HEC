@@ -59,8 +59,8 @@ final class RunExtractScaleTest {
         List<Path> mocks = Arrays.asList(mockXml);
         Path testDirectory = getTestDirectory();
         Path dssFile = testDirectory.resolve(mockFileName.replace(".xml", ".dss"));
-        Instant start = Instant.parse("2003-02-01T12:00:00Z");
-        Instant end = Instant.parse("2022-02-21T12:00:00Z");
+        Instant start = Instant.parse("2015-02-01T12:00:00Z");
+        Instant end = Instant.parse("2016-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");

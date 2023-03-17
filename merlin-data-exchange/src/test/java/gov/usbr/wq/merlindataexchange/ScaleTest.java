@@ -12,6 +12,7 @@ final class ScaleTest {
     private static final int NUMBER_OF_SIMULTANEOUS_RUNS = 10;
 
     public static void main(String[] args) throws Exception {
+        String configFile = "sacramento_config_dx_Tom.xml";
         ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(true);
         String javaHome = System.getProperty("java.home");
         String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
@@ -21,7 +22,7 @@ final class ScaleTest {
         List<ProcessBuilder> processBuilderList = new ArrayList<>(NUMBER_OF_SIMULTANEOUS_RUNS);
         for(int i=0 ; i < NUMBER_OF_SIMULTANEOUS_RUNS; i++)
         {
-            ProcessBuilder pb = new ProcessBuilder(javaBin, "-cp", classpath, className, "merlin_mock_config_dx.xml", "progressLog" + (i+1) +".log");
+            ProcessBuilder pb = new ProcessBuilder(javaBin, "-cp", classpath, className, configFile, "progressLog" + (i+1) +".log");
             pb.inheritIO();
             pb.directory(new File("."));
             processBuilderList.add(pb);
