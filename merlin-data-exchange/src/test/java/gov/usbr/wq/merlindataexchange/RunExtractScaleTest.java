@@ -20,18 +20,25 @@ final class RunExtractScaleTest {
 
     public static void main(String[] args) throws IOException
     {
-        String workingDir = System.getProperty("user.dir");
-        String libsDir = workingDir + "/merlin-data-exchange/build/libs";
-        System.setProperty("java.library.path", libsDir);
-        try {
-            Field field = ClassLoader.class.getDeclaredField("sys_paths");
-            field.setAccessible(true);
-            field.set(null, null);
-        } catch (Exception ex) {
-            // Handle the exception
+        try
+        {
+            String workingDir = System.getProperty("user.dir");
+            String libsDir = workingDir + "/merlin-data-exchange/build/libs";
+            System.setProperty("java.library.path", libsDir);
+            try {
+                Field field = ClassLoader.class.getDeclaredField("sys_paths");
+                field.setAccessible(true);
+                field.set(null, null);
+            } catch (Exception ex) {
+                // Handle the exception
+            }
+            System.out.println(System.getProperty("java.library.path"));
+            runExtract(args[0], args[1]);
         }
-        System.out.println(System.getProperty("java.library.path"));
-        runExtract(args[0], args[1]);
+        finally
+        {
+            System.exit(-1);
+        }
     }
 
     private static void runExtract(String configFileName, String progressLogFileName) throws IOException
