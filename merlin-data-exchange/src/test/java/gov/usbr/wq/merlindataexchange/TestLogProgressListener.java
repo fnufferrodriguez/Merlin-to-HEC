@@ -5,6 +5,7 @@ import gov.usbr.wq.merlindataexchange.io.CloseableReentrantLock;
 import hec.ui.ProgressListener;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.ConsoleHandler;
@@ -21,8 +22,25 @@ public final class TestLogProgressListener implements ProgressListener
 
     public TestLogProgressListener() throws IOException
     {
+       this(null);
+    }
+
+    public TestLogProgressListener(String logFileName) throws IOException
+    {
         LOGGER.setUseParentHandlers(false);
-        Path dir = Paths.get(System.getProperty("user.dir")).resolve("build/tmp").resolve("progressLog.log");
+        if(logFileName == null)
+        {
+            logFileName = "progressLog.log";
+        }
+        Path dir = Paths.get(System.getProperty("user.dir")).resolve("build/tmp").resolve(logFileName);
+        if (!Files.exists(dir.getParent())) {
+            Files.createDirectories(dir.getParent());
+        }
+
+        // Create file if it doesn't exist
+        if (!Files.exists(dir)) {
+            Files.createFile(dir);
+        }
         LOGGER.addHandler(new FileHandler(dir.toString())
         {
             @Override
@@ -52,6 +70,7 @@ public final class TestLogProgressListener implements ProgressListener
             }
         });
     }
+
     @Override
     public void start()
     {
