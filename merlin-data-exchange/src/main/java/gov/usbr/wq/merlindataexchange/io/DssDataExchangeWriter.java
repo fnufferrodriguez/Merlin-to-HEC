@@ -38,50 +38,56 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
     {
         Path dssWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         String seriesString = measure.getSeriesString();
-        if(timeSeriesContainer != null && !isCancelled.get())
+        try
         {
-            timeSeriesContainer.fileName = dssWritePath.toString();
-            boolean useSingleThreading = isSingleThreaded();
-            int success;
-            Instant writeStart;
-            Instant writeEnd;
-            if(useSingleThreading)
+            if(timeSeriesContainer != null && !isCancelled.get())
             {
-                writeStart = Instant.now();
-                try(CloseableReentrantLock lock = ReadWriteLockManager.getInstance().getCloseableLock().lockIt())
+                timeSeriesContainer.fileName = dssWritePath.toString();
+                boolean useSingleThreading = isSingleThreaded();
+                int success;
+                Instant writeStart;
+                Instant writeEnd;
+                if(useSingleThreading)
                 {
+                    writeStart = Instant.now();
+                    try(CloseableReentrantLock lock = ReadWriteLockManager.getInstance().getCloseableLock().lockIt())
+                    {
+                        success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener, readDurationString);
+                        writeEnd = Instant.now();
+                    }
+                }
+                else
+                {
+                    writeStart = Instant.now();
                     success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener, readDurationString);
                     writeEnd = Instant.now();
                 }
-            }
-            else
-            {
-                writeStart = Instant.now();
-                success = writeDss(timeSeriesContainer, runtimeParameters, measure, completionTracker, logFileLogger, progressListener, readDurationString);
-                writeEnd = Instant.now();
-            }
-            if(success == 0)
-            {
-                String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString + ReadWriteTimestampUtil.getDuration(writeStart, writeEnd);
-                int percentCompleteAfterWrite = completionTracker.readWriteTaskCompleted();
-                completionTracker.writeTaskCompleted();
-                if(progressListener != null)
+                if(success == 0)
                 {
-                    progressListener.progress(successMsg, MessageType.GENERAL, percentCompleteAfterWrite);
+                    String successMsg = "Write to " + timeSeriesContainer.fullName + " from " + seriesString + ReadWriteTimestampUtil.getDuration(writeStart, writeEnd);
+                    int percentCompleteAfterWrite = completionTracker.readWriteTaskCompleted();
+                    completionTracker.writeTaskCompleted();
+                    if(progressListener != null)
+                    {
+                        progressListener.progress(successMsg, MessageType.GENERAL, percentCompleteAfterWrite);
+                    }
+                    logFileLogger.log(successMsg);
+                    LOGGER.config(() -> successMsg);
                 }
-                logFileLogger.log(successMsg);
-                LOGGER.config(() -> successMsg);
-            }
-            else
-            {
-                String failMsg = "Failed to write " +  seriesString + " to DSS! Error status code: " + success;
-                if(progressListener != null)
+                else
                 {
-                    progressListener.progress(failMsg, MessageType.ERROR);
+                    String failMsg = "Failed to write " +  seriesString + " to DSS! Error status code: " + success;
+                    if(progressListener != null)
+                    {
+                        progressListener.progress(failMsg, MessageType.ERROR);
+                    }
+                    logFileLogger.log(failMsg);
+                    LOGGER.config(() -> failMsg);
                 }
-                logFileLogger.log(failMsg);
-                LOGGER.config(() -> failMsg);
             }
+        }
+        finally
+        {
             DssFileManagerImpl.getDssFileManager().close(dssWritePath.toString());
         }
     }
