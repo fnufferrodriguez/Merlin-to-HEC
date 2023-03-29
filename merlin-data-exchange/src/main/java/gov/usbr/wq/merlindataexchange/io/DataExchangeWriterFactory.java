@@ -6,12 +6,17 @@ import rma.util.lookup.Lookups;
 
 public final class DataExchangeWriterFactory
 {
-    public static DataExchangeWriter lookupWriter(DataStore destination) throws DataExchangeLookupException
+    private DataExchangeWriterFactory()
+    {
+        throw new AssertionError("Factory Class");
+    }
+
+    public static DataExchangeWriter<?> lookupWriter(DataStore destination) throws DataExchangeLookupException
     {
         String delimeter = "/";
         String lookupPath = DataExchangeWriter.LOOKUP_PATH + delimeter + destination.getDataStoreType();
         Lookup lookup = Lookups.forPath(lookupPath);
-        DataExchangeWriter retVal = lookup.lookup(DataExchangeWriter.class);
+        DataExchangeWriter<?> retVal = lookup.lookup(DataExchangeWriter.class);
         if(retVal == null)
         {
             throw new DataExchangeLookupException(destination);

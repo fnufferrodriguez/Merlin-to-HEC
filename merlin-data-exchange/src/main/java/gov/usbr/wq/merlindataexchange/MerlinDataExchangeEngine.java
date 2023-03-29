@@ -19,6 +19,7 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeReaderFactory;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriterFactory;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
+import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeTimeSeriesReader;
 import gov.usbr.wq.merlindataexchange.io.QualityVersionFromSetUtil;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
@@ -399,8 +400,8 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
         try
         {
             TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreSource);
-            DataExchangeReader reader = DataExchangeReaderFactory.lookupReader(dataStoreSource);
-            DataExchangeWriter writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination);
+            DataExchangeReader<?> reader = DataExchangeReaderFactory.lookupReader(dataStoreSource, dataExchangeSet);
+            DataExchangeWriter<?> writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination);
             String sourcePath = dataStoreSource.getPath(); //for merlin this is a URL
             DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
             if(cache != null)

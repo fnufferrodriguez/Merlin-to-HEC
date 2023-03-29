@@ -15,10 +15,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public interface DataExchangeReader extends DataExchanger
+public interface DataExchangeReader<T> extends DataExchanger
 {
     String LOOKUP_PATH = "dataexchange/reader";
-    CompletableFuture<TimeSeriesContainer> readData(DataExchangeSet configuration, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataExchangeCache cache, MeasureWrapper seriesPath,
+    CompletableFuture<T> readData(DataExchangeSet configuration, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataExchangeCache cache, MeasureWrapper seriesPath,
                                                     MerlinExchangeCompletionTracker completionTracker,
                                                     ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService, AtomicReference<String> readStart);
     String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters);

@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 100, path = DataExchangeWriter.LOOKUP_PATH
         + "/" + DssDataExchangeWriter.DSS)
-public final class DssDataExchangeWriter implements DataExchangeWriter
+public final class DssDataExchangeWriter implements DataExchangeWriter<TimeSeriesContainer>
 {
     public static final String DSS = "dss";
     private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
@@ -142,12 +142,6 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         return success;
     }
 
-    @Override
-    public String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters)
-    {
-        return buildAbsoluteDssWritePath(destinationDataStore.getPath(), parameters.getWatershedDirectory()).toString();
-    }
-
     private int getNumTrimmedValues(TimeSeriesContainer timeSeriesContainer)
     {
         int missingCount = 0;
@@ -159,17 +153,6 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             }
         }
         return missingCount;
-    }
-
-    private static Path buildAbsoluteDssWritePath(String filepath, Path watershedDir)
-    {
-        Path xmlFilePath = Paths.get(filepath);
-        if(!xmlFilePath.isAbsolute() && filepath.contains("$WATERSHED"))
-        {
-            filepath = filepath.replace("$WATERSHED", watershedDir.toString());
-            xmlFilePath = Paths.get(filepath);
-        }
-        return xmlFilePath;
     }
 
     private void logProgress(ProgressListener progressListener, String message, int percentComplete)

@@ -1,6 +1,6 @@
 package gov.usbr.wq.merlindataexchange.io;
 
-final class ReadWriteLockManager
+public final class ReadWriteLockManager
 {
 
     private final CloseableReentrantLock _closeableReentrantLock = new CloseableReentrantLock();

@@ -8,16 +8,31 @@ import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public interface DataExchangeWriter extends DataExchanger
+public interface DataExchangeWriter<T> extends DataExchanger
 {
 
     String LOOKUP_PATH = "dataexchange/reader";
 
-    void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper seriesPath, MerlinParameters runtimeParameters, DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker,
-                   ProgressListener progressListener, MerlinDataExchangeLogBody logger, AtomicBoolean isCancelled, AtomicReference<String> readStart);
+    void writeData(T dataObject, MeasureWrapper seriesPath, MerlinParameters runtimeParameters, DataStore destinationDataStore,
+                   MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logger,
+                   AtomicBoolean isCancelled, AtomicReference<String> readStart);
 
-    String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters);
+    default String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters)
+    {
+        String filepath = destinationDataStore.getPath();
+        Path watershedDir = parameters.getWatershedDirectory();
+        Path xmlFilePath = Paths.get(filepath);
+        if(!xmlFilePath.isAbsolute() && filepath.contains("$WATERSHED"))
+        {
+            filepath = filepath.replace("$WATERSHED", watershedDir.toString());
+            xmlFilePath = Paths.get(filepath);
+        }
+        return xmlFilePath.toString();
+    }
+
 }
