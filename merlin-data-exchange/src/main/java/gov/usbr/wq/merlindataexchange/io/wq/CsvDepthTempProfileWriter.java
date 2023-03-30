@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -157,7 +156,8 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Depth
     {
         CsvMapper mapper = new CsvMapper();
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        mapper.setDateFormat(new SimpleDateFormat(DateTimeFormatter.ISO_OFFSET_DATE_TIME.toString()));
+        javaTimeModule.addSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer());
+        javaTimeModule.addDeserializer(ZonedDateTime.class, new ZonedDateTimeDeserializer());
         mapper.registerModule(javaTimeModule);
         mapper.configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(), true);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
