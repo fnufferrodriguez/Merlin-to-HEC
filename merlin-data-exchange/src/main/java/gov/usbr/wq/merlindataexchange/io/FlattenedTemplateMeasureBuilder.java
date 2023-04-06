@@ -13,8 +13,8 @@ import java.io.IOException;
 public class FlattenedTemplateMeasureBuilder
 {
 
-    private Template _template;
-    private Measure _measure;
+    private TemplateWrapper _templateWraper;
+    private MeasureWrapper _measureWrapper;
 
     public FlattenedTemplateMeasureBuilder()
     {
@@ -22,7 +22,7 @@ public class FlattenedTemplateMeasureBuilder
 
     public FlattenedMeasureBuilder withTemplate(TemplateWrapper templateWrapper) throws IOException
     {
-        _template = MerlinObjectMapper.mapJsonToObjectUsingClass(templateWrapper.toJsonString(), Template.class);
+        _templateWraper = templateWrapper;
         return new FlattenedMeasureBuilder();
     }
 
@@ -30,7 +30,7 @@ public class FlattenedTemplateMeasureBuilder
     {
         public FlattenedBuilder withMeasure(MeasureWrapper measureWrapper) throws IOException
         {
-            _measure = MerlinObjectMapper.mapJsonToObjectUsingClass(measureWrapper.toJsonString(), Measure.class);
+            _measureWrapper = measureWrapper;
             return new FlattenedBuilder();
         }
     }
@@ -39,7 +39,7 @@ public class FlattenedTemplateMeasureBuilder
     {
         public FlattenedTemplateMeasure build()
         {
-            return new FlattenedTemplateMeasure(_template, _measure);
+            return new FlattenedTemplateMeasure(_templateWraper, _measureWrapper);
         }
     }
 }

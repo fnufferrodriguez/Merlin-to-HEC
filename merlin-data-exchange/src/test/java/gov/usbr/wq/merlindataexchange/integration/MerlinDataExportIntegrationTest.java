@@ -1,6 +1,7 @@
 package gov.usbr.wq.merlindataexchange.integration;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -14,17 +15,22 @@ import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class MerlinDataExportIntegrationTest
 {
 
+    private Path getTestDirectory()
+    {
+        return Paths.get(System.getProperty("user.dir")).resolve("build/tmp");
+    }
 
     @Test
     void testExportCsv() throws IOException
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        String csvFileName = "merlin_template_measure.xlsx";
+        String csvFileName = "merlin_template_measure.csv";
         String csvPath = getTestDirectory().resolve(csvFileName).toString();
 
         FluentAuthenticationBuilder authenticationBuilder = new AuthenticationParametersBuilder()
@@ -40,10 +46,33 @@ final class MerlinDataExportIntegrationTest
 
         MerlinDataExchangeStatus status = dataExport.runExport().join();
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        assertTrue(Files.size(Paths.get(csvPath)) > 0);
     }
 
-    private Path getTestDirectory()
+    @Test
+    void testExportXlsx() throws IOException
     {
-        return Paths.get(System.getProperty("user.dir")).resolve("build/tmp");
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        String xlsxFileName = "merlin_template_measure.xlsx";
+        String xlsxPath = getTestDirectory().resolve(xlsxFileName).toString();
+
+        FluentAuthenticationBuilder authenticationBuilder = new AuthenticationParametersBuilder()
+                .forUrl("https://www.grabdata2.com")
+                .setUsername(username)
+                .andPassword(password);
+
+        DataExportEngine dataExport = new MerlinDataExportEngineFluentBuilder()
+                .withAuthenticationParameters(authenticationBuilder.build())
+                .withExportFilePath(xlsxPath)
+                .withExportType(ExportType.XLSX)
+                .build();
+
+        MerlinDataExchangeStatus status = dataExport.runExport().join();
+        assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        assertTrue(Files.size(Paths.get(xlsxPath)) > 0);
+
     }
+
+
 }

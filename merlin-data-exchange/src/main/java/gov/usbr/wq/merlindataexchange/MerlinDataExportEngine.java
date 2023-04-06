@@ -1,12 +1,5 @@
 package gov.usbr.wq.merlindataexchange;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
 import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.HttpAccessUtils;
@@ -16,8 +9,15 @@ import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 import gov.usbr.wq.merlindataexchange.fluentbuilders.ExportType;
 import gov.usbr.wq.merlindataexchange.io.TemplateMeasureCsvWriter;
 import gov.usbr.wq.merlindataexchange.io.TemplateMeasureReader;
+import gov.usbr.wq.merlindataexchange.io.TemplateMeasureXlsxWriter;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MerlinDataExportEngine extends MerlinEngine implements DataExportEngine
 {
@@ -40,13 +40,15 @@ public class MerlinDataExportEngine extends MerlinEngine implements DataExportEn
         {
             case JSON:
                 throw new IllegalArgumentException("Unsupported export type: " + _exportType);
+            case XLSX:
             case CSV:
+                return runExport(_exportType);
             default:
-                return runCsvExport();
+                throw new IllegalArgumentException("Unsupported export type: " + _exportType);
         }
     }
 
-    private CompletableFuture<MerlinDataExchangeStatus> runCsvExport()
+    private CompletableFuture<MerlinDataExchangeStatus> runExport(ExportType exportType)
     {
         return CompletableFuture.supplyAsync(() ->
         {
@@ -55,7 +57,17 @@ public class MerlinDataExportEngine extends MerlinEngine implements DataExportEn
                 TokenContainer token = getToken(_authenticationParameters.getUrl(), _authenticationParameters.getUsernamePassword());
                 ApiConnectionInfo connectionInfo = new ApiConnectionInfo(_authenticationParameters.getUrl());
                 Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap = new TemplateMeasureReader().collectTemplateMeasureData(token, connectionInfo, getExecutorService());
-                new TemplateMeasureCsvWriter().writeToCsv(templateMeasureMap, _exportFilePath);
+                switch (exportType)
+                {
+                    case CSV:
+                        new TemplateMeasureCsvWriter().write(templateMeasureMap, _exportFilePath);
+                        break;
+                    case XLSX:
+                        new TemplateMeasureXlsxWriter().write(templateMeasureMap, _exportFilePath);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported export type: " + exportType);
+                }
                 return MerlinDataExchangeStatus.COMPLETE_SUCCESS;
             } catch (Exception e)
             {
