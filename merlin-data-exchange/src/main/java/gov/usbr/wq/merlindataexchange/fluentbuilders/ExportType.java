@@ -1,6 +1,7 @@
 package gov.usbr.wq.merlindataexchange.fluentbuilders;
 
-public enum ExportType {
+public enum ExportType
+{
     CSV,
     JSON
 }

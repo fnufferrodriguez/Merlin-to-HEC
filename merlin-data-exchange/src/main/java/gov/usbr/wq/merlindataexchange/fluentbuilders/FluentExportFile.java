@@ -1,6 +1,7 @@
 package gov.usbr.wq.merlindataexchange.fluentbuilders;
 
-public interface FluentExportFile {
+public interface FluentExportFile
+{
     FluentExportType withExportFilePath(String exportFilePath);
 
 }

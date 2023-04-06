@@ -22,21 +22,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TemplateMeasureCsvWriter {
-    public void writeToCsv(Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap, String exportFilePath) throws IOException {
+public class TemplateMeasureCsvWriter
+{
+    public void writeToCsv(Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap, String exportFilePath) throws IOException
+    {
         List<FlattenedTemplateMeasure> flattenedTemplateMeasures = flattenTemplateMeasureMap(templateMeasureMap);
-//        CsvMapper mapper = new CsvMapper();
+        //        CsvMapper mapper = new CsvMapper();
         XlsxMapper mapper = new XlsxMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.findAndRegisterModules();
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addSerializer(OffsetDateTime.class, new JsonSerializer<OffsetDateTime>() {
-            public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        simpleModule.addSerializer(OffsetDateTime.class, new JsonSerializer<OffsetDateTime>()
+        {
+            public void serialize(OffsetDateTime offsetDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException
+            {
                 jsonGenerator.writeString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(offsetDateTime));
             }
         });
-        simpleModule.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {
-            public OffsetDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+        simpleModule.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>()
+        {
+            public OffsetDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException
+            {
                 String dateStr = p.getText().trim();
                 return OffsetDateTime.parse(dateStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             }
@@ -48,23 +54,30 @@ public class TemplateMeasureCsvWriter {
 
         CsvSchema csvSchema = mapper.schemaFor(FlattenedTemplateMeasure.class)
                 .withHeader()
-                .withColumnSeparator('|' );
+                .withColumnSeparator('|');
 
         mapper.writer(csvSchema).writeValue(new File(exportFilePath), flattenedTemplateMeasures.toArray());
     }
 
-    private static class DoubleSerializer extends JsonSerializer<Double> {
-        private DoubleSerializer() {
+    private static class DoubleSerializer extends JsonSerializer<Double>
+    {
+        private DoubleSerializer()
+        {
         }
 
-        public void serialize(Double value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            if (value == null) {
+        public void serialize(Double value, JsonGenerator gen, SerializerProvider serializers) throws IOException
+        {
+            if (value == null)
+            {
                 gen.writeNull();
-            } else {
+            } else
+            {
                 int intValue = value.intValue();
-                if ((double)intValue == value) {
+                if ((double) intValue == value)
+                {
                     gen.writeNumber(intValue);
-                } else {
+                } else
+                {
                     gen.writeNumber(value);
                 }
             }
@@ -72,12 +85,15 @@ public class TemplateMeasureCsvWriter {
         }
     }
 
-    private List<FlattenedTemplateMeasure> flattenTemplateMeasureMap(Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap) throws IOException {
+    private List<FlattenedTemplateMeasure> flattenTemplateMeasureMap(Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap) throws IOException
+    {
         List<FlattenedTemplateMeasure> flattenedTemplateMeasures = new ArrayList<>();
-        for (Map.Entry<TemplateWrapper, List<MeasureWrapper>> entry : templateMeasureMap.entrySet()) {
+        for (Map.Entry<TemplateWrapper, List<MeasureWrapper>> entry : templateMeasureMap.entrySet())
+        {
             TemplateWrapper templateWrapper = entry.getKey();
             List<MeasureWrapper> measureWrappers = entry.getValue();
-            for (MeasureWrapper measureWrapper : measureWrappers) {
+            for (MeasureWrapper measureWrapper : measureWrappers)
+            {
                 FlattenedTemplateMeasure flattenedTemplateMeasure = new FlattenedTemplateMeasureBuilder()
                         .withTemplate(templateWrapper)
                         .withMeasure(measureWrapper)

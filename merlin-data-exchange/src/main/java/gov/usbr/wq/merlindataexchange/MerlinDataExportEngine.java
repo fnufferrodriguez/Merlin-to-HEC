@@ -19,21 +19,25 @@ import gov.usbr.wq.merlindataexchange.io.TemplateMeasureReader;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
 
-public class MerlinDataExportEngine extends MerlinEngine implements DataExportEngine {
+public class MerlinDataExportEngine extends MerlinEngine implements DataExportEngine
+{
     private final Logger LOGGER = Logger.getLogger(MerlinDataExportEngine.class.getName());
     private final AuthenticationParameters _authenticationParameters;
     private final String _exportFilePath;
     private final ExportType _exportType;
 
-    public MerlinDataExportEngine(AuthenticationParameters authenticationParameters, String exportFilePath, ExportType exportType) {
+    public MerlinDataExportEngine(AuthenticationParameters authenticationParameters, String exportFilePath, ExportType exportType)
+    {
         _authenticationParameters = authenticationParameters;
         _exportFilePath = exportFilePath;
         _exportType = exportType;
     }
 
     @Override
-    public CompletableFuture<MerlinDataExchangeStatus> runExport() {
-        switch (_exportType) {
+    public CompletableFuture<MerlinDataExchangeStatus> runExport()
+    {
+        switch (_exportType)
+        {
             case JSON:
                 throw new IllegalArgumentException("Unsupported export type: " + _exportType);
             case CSV:
@@ -42,15 +46,19 @@ public class MerlinDataExportEngine extends MerlinEngine implements DataExportEn
         }
     }
 
-    private CompletableFuture<MerlinDataExchangeStatus> runCsvExport() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
+    private CompletableFuture<MerlinDataExchangeStatus> runCsvExport()
+    {
+        return CompletableFuture.supplyAsync(() ->
+        {
+            try
+            {
                 TokenContainer token = getToken(_authenticationParameters.getUrl(), _authenticationParameters.getUsernamePassword());
                 ApiConnectionInfo connectionInfo = new ApiConnectionInfo(_authenticationParameters.getUrl());
                 Map<TemplateWrapper, List<MeasureWrapper>> templateMeasureMap = new TemplateMeasureReader().collectTemplateMeasureData(token, connectionInfo, getExecutorService());
                 new TemplateMeasureCsvWriter().writeToCsv(templateMeasureMap, _exportFilePath);
                 return MerlinDataExchangeStatus.COMPLETE_SUCCESS;
-            } catch (Exception e) {
+            } catch (Exception e)
+            {
                 LOGGER.log(Level.SEVERE, "Error exporting data", e);
                 return MerlinDataExchangeStatus.FAILURE;
             }
@@ -58,12 +66,15 @@ public class MerlinDataExportEngine extends MerlinEngine implements DataExportEn
 
     }
 
-    public TokenContainer getToken(String url, UsernamePasswordHolder usernamePassword) throws MerlinAuthorizationException {
+    public TokenContainer getToken(String url, UsernamePasswordHolder usernamePassword) throws MerlinAuthorizationException
+    {
         TokenContainer token;
         ApiConnectionInfo connectionInfo = new ApiConnectionInfo(url);
-        try {
+        try
+        {
             token = HttpAccessUtils.authenticate(connectionInfo, usernamePassword.getUsername(), usernamePassword.getPassword());
-        } catch (HttpAccessException e) {
+        } catch (HttpAccessException e)
+        {
             throw new MerlinAuthorizationException(e, usernamePassword, connectionInfo);
         }
         return token;

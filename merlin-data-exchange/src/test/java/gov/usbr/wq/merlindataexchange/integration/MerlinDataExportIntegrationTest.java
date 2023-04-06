@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-final class MerlinDataExportIntegrationTest {
+final class MerlinDataExportIntegrationTest
+{
 
 
     @Test
-    void testExportCsv() throws IOException {
+    void testExportCsv() throws IOException
+    {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
         String csvFileName = "merlin_template_measure.xlsx";
@@ -40,7 +42,8 @@ final class MerlinDataExportIntegrationTest {
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
     }
 
-    private Path getTestDirectory() {
+    private Path getTestDirectory()
+    {
         return Paths.get(System.getProperty("user.dir")).resolve("build/tmp");
     }
 }

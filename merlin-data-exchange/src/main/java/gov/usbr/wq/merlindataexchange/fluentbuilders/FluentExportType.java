@@ -1,5 +1,6 @@
 package gov.usbr.wq.merlindataexchange.fluentbuilders;
 
-public interface FluentExportType {
+public interface FluentExportType
+{
     FluentDataExportBuilder withExportType(ExportType exportType);
 }

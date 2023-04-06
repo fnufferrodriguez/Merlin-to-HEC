@@ -10,28 +10,35 @@ import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 
 import java.io.IOException;
 
-public class FlattenedTemplateMeasureBuilder {
+public class FlattenedTemplateMeasureBuilder
+{
 
     private Template _template;
     private Measure _measure;
 
-    public FlattenedTemplateMeasureBuilder() {
+    public FlattenedTemplateMeasureBuilder()
+    {
     }
 
-    public FlattenedMeasureBuilder withTemplate(TemplateWrapper templateWrapper) throws IOException {
+    public FlattenedMeasureBuilder withTemplate(TemplateWrapper templateWrapper) throws IOException
+    {
         _template = MerlinObjectMapper.mapJsonToObjectUsingClass(templateWrapper.toJsonString(), Template.class);
         return new FlattenedMeasureBuilder();
     }
 
-    public class FlattenedMeasureBuilder {
-        public FlattenedBuilder withMeasure(MeasureWrapper measureWrapper) throws IOException {
+    public class FlattenedMeasureBuilder
+    {
+        public FlattenedBuilder withMeasure(MeasureWrapper measureWrapper) throws IOException
+        {
             _measure = MerlinObjectMapper.mapJsonToObjectUsingClass(measureWrapper.toJsonString(), Measure.class);
             return new FlattenedBuilder();
         }
     }
 
-    public class FlattenedBuilder {
-        public FlattenedTemplateMeasure build() {
+    public class FlattenedBuilder
+    {
+        public FlattenedTemplateMeasure build()
+        {
             return new FlattenedTemplateMeasure(_template, _measure);
         }
     }
