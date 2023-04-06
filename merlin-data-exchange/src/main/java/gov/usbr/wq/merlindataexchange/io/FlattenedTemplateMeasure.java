@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 
-@JsonPropertyOrder({ "template", "measure" })
+@JsonPropertyOrder({ "templateWrapper", "measureWrapper" })
 public class FlattenedTemplateMeasure {
     @JsonUnwrapped
     TemplateWrapper templateWrapper;
