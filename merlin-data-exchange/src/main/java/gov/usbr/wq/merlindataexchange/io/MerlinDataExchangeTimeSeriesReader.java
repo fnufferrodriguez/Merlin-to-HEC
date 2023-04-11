@@ -1,6 +1,11 @@
 package gov.usbr.wq.merlindataexchange.io;
 
+import gov.usbr.wq.dataaccess.MerlinTimeSeriesDataAccess;
+import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
+import gov.usbr.wq.dataaccess.http.HttpAccessException;
+import gov.usbr.wq.dataaccess.http.TokenContainer;
 import gov.usbr.wq.dataaccess.model.DataWrapper;
+import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.NoEventsException;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
@@ -12,16 +17,19 @@ import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 import rma.services.annotations.ServiceProvider;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeReader.class, position = 100, path = DataExchangeReader.LOOKUP_PATH
         + "/" + MerlinDataExchangeReader.MERLIN + "/" + MerlinDataExchangeTimeSeriesReader.TIMESERIES)
-public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchangeReader<TimeSeriesContainer>
+public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchangeReader<DataWrapper, TimeSeriesContainer>
 {
     public static final String TIMESERIES = "time-series"; //this corresponds to data-type in set we are reading for
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeTimeSeriesReader.class.getName());
@@ -77,4 +85,29 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
         return retVal;
     }
 
+    @Override
+    protected DataWrapper retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure,
+                                       Integer qualityVersionId, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
+    {
+            MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
+            DataWrapper retVal = null;
+            if(!isCancelled.get())
+            {
+                try
+                {
+                    retVal = access.getEventsBySeries(new ApiConnectionInfo(merlinApiRoot), token, measure, qualityVersionId, start, end);
+                }
+                catch (IOException | HttpAccessException ex)
+                {
+                    logError(progressListener, logFileLogger, "Failed to retrieve data for measure with series string: " + measure.getSeriesString(), ex);
+                }
+            }
+            return retVal;
+    }
+
+    @Override
+    public List<MeasureWrapper> filterMeasuresToRead(List<MeasureWrapper> measures)
+    {
+        return measures; //no filtering for time series. Each read will handle a single measure.
+    }
 }

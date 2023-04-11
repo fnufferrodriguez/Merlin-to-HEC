@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
-final class DepthTempProfileSamples
+final class ProfileSamples
 {
     private final Double _elevation;
-    private final List<DepthTempProfileSample> _samples;
+    private final List<ProfileSample> _samples;
     private final Map<String, String> _headersMap;
 
-    DepthTempProfileSamples(Double elevation, List<DepthTempProfileSample> samples, Map<String, String> headersMap)
+    ProfileSamples(Double elevation, List<ProfileSample> samples, Map<String, String> headersMap)
     {
         _elevation = elevation;
         _samples = samples;
@@ -24,7 +23,7 @@ final class DepthTempProfileSamples
         return _elevation;
     }
 
-    List<DepthTempProfileSample> getSamples()
+    List<ProfileSample> getSamples()
     {
         return new ArrayList<>(_samples);
     }

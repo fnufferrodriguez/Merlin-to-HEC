@@ -1,10 +1,8 @@
 package gov.usbr.wq.merlindataexchange.io;
 
-import gov.usbr.wq.dataaccess.MerlinTimeSeriesDataAccess;
 import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
 import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.TokenContainer;
-import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.merlindataexchange.DataExchangeCache;
@@ -17,7 +15,6 @@ import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordHolder;
 import gov.usbr.wq.merlindataexchange.parameters.UsernamePasswordNotFoundException;
 import hec.ui.ProgressListener;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<T>
+public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeReader<T>
 {
     public static final String MERLIN = "merlin";
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeReader.class.getName());
@@ -61,7 +58,7 @@ public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<
         }, executorService);
     }
 
-    private T retrieveDataAsType(UsernamePasswordHolder usernamePassword, Instant start, Instant end, String merlinApiRoot, MeasureWrapper measure, Integer qualityVersionId,
+    protected T retrieveDataAsType(UsernamePasswordHolder usernamePassword, Instant start, Instant end, String merlinApiRoot, MeasureWrapper measure, Integer qualityVersionId,
                                                    ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                    AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo, MerlinExchangeCompletionTracker completionTracker,
                                                    Boolean isProcessed, AtomicReference<String> readDurationString)
@@ -72,7 +69,7 @@ public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<
             TokenRegistry tokenRegistry = TokenRegistry.getRegistry();
             TokenContainer token = tokenRegistry.getToken(new ApiConnectionInfo(merlinApiRoot), usernamePassword.getUsername(), usernamePassword.getPassword());
             Instant readStart = Instant.now();
-            DataWrapper data = retrieveData(start, end, merlinApiRoot,token, measure, qualityVersionId, progressListener, logFileLogger, isCancelled);
+            S data = retrieveData(start, end, merlinApiRoot,token, measure, qualityVersionId, progressListener, logFileLogger, isCancelled);
             Instant readEnd = Instant.now();
             readDurationString.set(ReadWriteTimestampUtil.getDuration(readStart, readEnd));
             if(data == null)
@@ -98,29 +95,12 @@ public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<
         return retVal;
     }
 
-    protected abstract T convertToType(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener,
+    protected abstract T convertToType(S data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener,
                                        MerlinDataExchangeLogBody logFileLogger, MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed,
                                        Instant start, Instant end, AtomicReference<String> readDurationString);
 
-
-    private DataWrapper retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure, Integer qualityVersionId,
-                                     ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
-    {
-        MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
-        DataWrapper retVal = null;
-        if(!isCancelled.get())
-        {
-            try
-            {
-                retVal = access.getEventsBySeries(new ApiConnectionInfo(merlinApiRoot), token, measure, qualityVersionId, start, end);
-            }
-            catch (IOException | HttpAccessException ex)
-            {
-                logError(progressListener, logFileLogger, "Failed to retrieve data for measure with series string: " + measure.getSeriesString(), ex);
-            }
-        }
-        return retVal;
-    }
+    protected abstract S retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure, Integer qualityVersionId,
+                 ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled);
 
     @Override
     public String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters)
@@ -128,7 +108,7 @@ public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<
         return sourceDataStore.getPath();
     }
 
-    void logProgressMessage(ProgressListener progressListener, String message, int nothingToWritePercentIncrement)
+    protected void logProgressMessage(ProgressListener progressListener, String message, int nothingToWritePercentIncrement)
     {
         if (progressListener != null)
         {
@@ -144,7 +124,7 @@ public abstract class MerlinDataExchangeReader<T> implements DataExchangeReader<
         }
     }
 
-    void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, Throwable e)
+    protected void logError(ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, String errorMsg, Throwable e)
     {
         if(progressListener != null)
         {

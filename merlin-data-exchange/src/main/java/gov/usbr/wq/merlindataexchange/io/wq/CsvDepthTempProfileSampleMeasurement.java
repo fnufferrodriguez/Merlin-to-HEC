@@ -1,68 +1,67 @@
 package gov.usbr.wq.merlindataexchange.io.wq;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-@JsonPropertyOrder({ "date", "temperature", "depth" })
+@JsonPropertyOrder({ "Date", "Temperature", "Depth" })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 final class CsvDepthTempProfileSampleMeasurement
 {
-    @JsonIgnore
-    private DepthTempProfileSampleMeasurement _delegate;
+    @JsonProperty("Date")
+    private ZonedDateTime _dateTime;
+    @JsonProperty("Temperature")
+    private Double _temperature;
+    @JsonProperty("Depth")
+    private Double _depth;
+    CsvDepthTempProfileSampleMeasurement(ZonedDateTime dateTime, Double temperature, Double depth)
+    {
+        _dateTime = dateTime;
+        _temperature = temperature;
+        _depth = depth;
+    }
+
     CsvDepthTempProfileSampleMeasurement()
     {
-        _delegate = new DepthTempProfileSampleMeasurement(null, null, null);
+        _dateTime = null;
+        _temperature = null;
+        _depth = null;
     }
 
-    CsvDepthTempProfileSampleMeasurement(DepthTempProfileSampleMeasurement delegate)
-    {
-        _delegate = delegate;
-    }
-
-    @JsonProperty("date")
     ZonedDateTime getDateTime()
     {
-        return _delegate.getDateTime();
+        return _dateTime;
     }
 
-    @JsonProperty("temperature")
     Double getTemperature()
     {
-        return _delegate.getTemperature();
+        return _temperature;
     }
-
-    @JsonProperty("depth")
     Double getDepth()
     {
-        return _delegate.getDepth();
+        return _depth;
     }
 
-    @JsonProperty("date")
     void setDateTime(ZonedDateTime dateTime)
     {
-        _delegate = new DepthTempProfileSampleMeasurement(dateTime, _delegate.getTemperature(), _delegate.getDepth());
+        _dateTime = dateTime;
     }
 
-    @JsonProperty("temperature")
     void setTemperature(Double temperature)
     {
-        _delegate = new DepthTempProfileSampleMeasurement(_delegate.getDateTime(), temperature, _delegate.getDepth());
+        _temperature = temperature;
     }
 
-    @JsonProperty("depth")
     void setDepth(Double depth)
     {
-        _delegate = new DepthTempProfileSampleMeasurement(_delegate.getDateTime(), _delegate.getTemperature(), depth);
-    }
-
-    DepthTempProfileSampleMeasurement getDelegate()
-    {
-        return _delegate;
+        _depth = depth;
     }
 
     @Override
@@ -77,12 +76,12 @@ final class CsvDepthTempProfileSampleMeasurement
             return false;
         }
         CsvDepthTempProfileSampleMeasurement that = (CsvDepthTempProfileSampleMeasurement) o;
-        return Objects.equals(_delegate, that._delegate);
+        return Objects.equals(_dateTime, that._dateTime) && Objects.equals(_temperature, that._temperature) && Objects.equals(_depth, that._depth);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(_delegate);
+        return Objects.hash(_dateTime, _temperature, _depth);
     }
 }

@@ -7,9 +7,9 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
-import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,4 +22,6 @@ public interface DataExchangeReader<T> extends DataExchanger
                                                     MerlinExchangeCompletionTracker completionTracker,
                                                     ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService, AtomicReference<String> readStart);
     String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters);
+
+    List<MeasureWrapper> filterMeasuresToRead(List<MeasureWrapper> measures);
 }

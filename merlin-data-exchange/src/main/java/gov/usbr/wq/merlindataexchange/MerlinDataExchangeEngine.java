@@ -19,7 +19,6 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeReaderFactory;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriterFactory;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
-import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeTimeSeriesReader;
 import gov.usbr.wq.merlindataexchange.io.QualityVersionFromSetUtil;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
@@ -440,6 +439,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
                     throw new UnsupportedQualityVersionException(dataExchangeSet.getQualityVersionName(), dataExchangeSet.getQualityVersionId());
                 }
                 List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
+                measures = reader.filterMeasuresToRead(measures);
                 List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
                 measures.forEach(measure ->
                         measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, dataStoreSource, dataStoreDestination,

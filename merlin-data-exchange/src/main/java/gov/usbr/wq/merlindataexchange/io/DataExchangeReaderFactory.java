@@ -14,8 +14,8 @@ public final class DataExchangeReaderFactory
 
     public static DataExchangeReader<?> lookupReader(DataStore source, DataExchangeSet set) throws DataExchangeLookupException
     {
-        String delimeter = "/";
-        String lookupPath = DataExchangeReader.LOOKUP_PATH + delimeter + source.getDataStoreType() + delimeter + set.getDataType();
+        String delimiter = "/";
+        String lookupPath = DataExchangeReader.LOOKUP_PATH + delimiter + source.getDataStoreType() + delimiter + set.getDataType();
         Lookup lookup = Lookups.forPath(lookupPath);
         DataExchangeReader<?> retVal = lookup.lookup(DataExchangeReader.class);
         if(retVal == null)
