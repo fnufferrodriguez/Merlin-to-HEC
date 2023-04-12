@@ -1,25 +1,26 @@
 package gov.usbr.wq.merlindataexchange.io.wq;
 
-import gov.usbr.wq.dataaccess.model.DataWrapper;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 final class ProfileSample
 {
-    private final DataWrapper _depthData;
-    private final DataWrapper _tempData;
+    private final ZonedDateTime _dateTime;
+    private final List<ProfileConstituentData> _constituentDataList;
 
-    public ProfileSample(DataWrapper depthData, DataWrapper tempData)
+    public ProfileSample(ZonedDateTime dateTime, List<ProfileConstituentData> constituentDataList)
     {
-        _depthData = depthData;
-        _tempData = tempData;
+        _dateTime = dateTime;
+        _constituentDataList = constituentDataList;
     }
 
-    DataWrapper getDepthData()
+    ZonedDateTime getDateTime()
     {
-        return _depthData;
+        return _dateTime;
     }
 
-    DataWrapper getTempData()
+    List<ProfileConstituentData> getConstituentDataList()
     {
-        return _tempData;
+        return _constituentDataList;
     }
 }

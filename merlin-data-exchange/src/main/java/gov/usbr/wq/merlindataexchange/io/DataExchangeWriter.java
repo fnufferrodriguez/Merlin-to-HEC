@@ -5,11 +5,11 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
-import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,7 +20,7 @@ public interface DataExchangeWriter<T> extends DataExchanger
 
     void writeData(T dataObject, MeasureWrapper seriesPath, MerlinParameters runtimeParameters, DataStore destinationDataStore,
                    MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logger,
-                   AtomicBoolean isCancelled, AtomicReference<String> readStart);
+                   AtomicBoolean isCancelled, AtomicReference<String> readStart, AtomicReference<List<String>> logHelper);
 
     default String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters)
     {

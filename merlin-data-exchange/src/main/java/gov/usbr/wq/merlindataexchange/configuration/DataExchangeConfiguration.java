@@ -3,6 +3,7 @@ package gov.usbr.wq.merlindataexchange.configuration;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,12 +12,26 @@ public final class DataExchangeConfiguration
 {
     @JacksonXmlProperty(localName = "datastore")
     private List<DataStore> _dataStores;
+    @JacksonXmlProperty(localName = "datastore-profile")
+    private List<DataStoreProfile> _dataStoreProfiles;
     @JacksonXmlProperty(localName = "data-exchange-set")
     private List<DataExchangeSet> _dataExchangeSet;
 
     public List<DataStore> getDataStores()
     {
-        return _dataStores;
+        List<DataStore> dataStores = new ArrayList<>(_dataStores);
+        dataStores.addAll(new ArrayList<>(_dataStoreProfiles));
+        return dataStores;
+    }
+
+    List<DataStoreProfile> getDataStoreProfiles()
+    {
+        return _dataStoreProfiles;
+    }
+
+    void setDataStoreProfiles(List<DataStoreProfile> dataStoreProfiles)
+    {
+        _dataStoreProfiles = dataStoreProfiles;
     }
 
     public void setDataStores(List<DataStore> dataStores)

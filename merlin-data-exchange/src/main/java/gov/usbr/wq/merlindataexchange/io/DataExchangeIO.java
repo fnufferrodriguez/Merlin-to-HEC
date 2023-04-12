@@ -10,6 +10,7 @@ import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import hec.ui.ProgressListener;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,7 +23,8 @@ public final class DataExchangeIO
         throw new AssertionError("Utility class for reading and writing data. Don't instantiate");
     }
 
-    public static CompletableFuture<Void> exchangeData(DataExchangeReader reader, DataExchangeWriter writer, DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters,
+    @SuppressWarnings("unchecked")
+    public static <T> CompletableFuture<Void> exchangeData(DataExchangeReader<?> reader, DataExchangeWriter<T> writer, DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters,
                                                        DataStore source, DataStore destination, DataExchangeCache cache, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
                                                        ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService)
     {
@@ -31,11 +33,12 @@ public final class DataExchangeIO
         if(!isCancelled.get())
         {
             AtomicReference<String> readDurationString = new AtomicReference<>("");
-            retVal = reader.readData(dataExchangeSet, runtimeParameters, source, cache, measure,
-                            completionTracker, progressListener, isCancelled, logger, executorService, readDurationString)
+            AtomicReference<List<String>> logHelper = new AtomicReference<>();
+            retVal = reader.readData(dataExchangeSet, runtimeParameters, source, destination, cache, measure,
+                            completionTracker, progressListener, isCancelled, logger, executorService, readDurationString, logHelper)
                     .thenAcceptAsync(tsc ->
                     {
-                        writer.writeData(tsc, measure, runtimeParameters, destination, completionTracker, progressListener, logger, isCancelled, readDurationString);
+                        writer.writeData((T) tsc, measure, runtimeParameters, destination, completionTracker, progressListener, logger, isCancelled, readDurationString, logHelper);
                         Instant writeEnd = Instant.now();
                         String totalDuration = ReadWriteTimestampUtil.getDuration(readStart, writeEnd);
                         if(!totalDuration.isEmpty())

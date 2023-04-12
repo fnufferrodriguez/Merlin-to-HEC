@@ -18,10 +18,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public interface DataExchangeReader<T> extends DataExchanger
 {
     String LOOKUP_PATH = "dataexchange/reader";
-    CompletableFuture<T> readData(DataExchangeSet configuration, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataExchangeCache cache, MeasureWrapper seriesPath,
-                                                    MerlinExchangeCompletionTracker completionTracker,
-                                                    ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService, AtomicReference<String> readStart);
+    CompletableFuture<T> readData(DataExchangeSet configuration, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataStore destDataStore,
+                                  DataExchangeCache cache, MeasureWrapper seriesPath, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
+                                  AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService,
+                                  AtomicReference<String> readStart, AtomicReference<List<String>> logHelper);
     String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters);
 
-    List<MeasureWrapper> filterMeasuresToRead(List<MeasureWrapper> measures);
+    List<MeasureWrapper> filterMeasuresToRead(DataStore dataStore, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures);
 }

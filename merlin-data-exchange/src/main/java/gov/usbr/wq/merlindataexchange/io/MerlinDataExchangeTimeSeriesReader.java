@@ -9,6 +9,8 @@ import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.NoEventsException;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
+import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
+import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import hec.data.DataSetIllegalArgumentException;
 import hec.heclib.dss.HecTimeSeriesBase;
 import hec.heclib.util.HecTime;
@@ -35,7 +37,7 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeTimeSeriesReader.class.getName());
 
     @Override
-    protected TimeSeriesContainer convertToType(DataWrapper data, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+    protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                 MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, Instant start, Instant end, AtomicReference<String> readDurationString)
     {
         TimeSeriesContainer retVal = null;
@@ -87,7 +89,7 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
 
     @Override
     protected DataWrapper retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure,
-                                       Integer qualityVersionId, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled)
+                                       Integer qualityVersionId, DataStore sourceDataStore, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<List<String>> logHelper)
     {
             MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
             DataWrapper retVal = null;
@@ -106,7 +108,7 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     }
 
     @Override
-    public List<MeasureWrapper> filterMeasuresToRead(List<MeasureWrapper> measures)
+    public List<MeasureWrapper> filterMeasuresToRead(DataStore dataStore, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures)
     {
         return measures; //no filtering for time series. Each read will handle a single measure.
     }

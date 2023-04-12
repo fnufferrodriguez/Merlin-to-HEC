@@ -13,8 +13,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import gov.usbr.wq.dataaccess.model.DataWrapper;
-import gov.usbr.wq.dataaccess.model.EventWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
@@ -24,7 +22,6 @@ import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteLockManager;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteTimestampUtil;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import hec.heclib.dss.DSSPathname;
 import hec.ui.ProgressListener;
 import rma.services.annotations.ServiceProvider;
 
@@ -38,28 +35,28 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 200, path = DataExchangeWriter.LOOKUP_PATH
-        + "/" + CsvDepthTempProfileWriter.CSV_PROFILE)
+        + "/" + CsvDepthTempProfileWriter.CSV)
 public final class CsvDepthTempProfileWriter implements DataExchangeWriter<ProfileSample>
 {
     private static final Logger LOGGER = Logger.getLogger(CsvDepthTempProfileWriter.class.getName());
-    public static final String CSV_PROFILE = "csv-profile-depth-temp";
+    public static final String CSV = "csv";
     public static final String MERLIN_TO_CSV_PROFILE_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.csv.profile.singlethread";
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
 
     @Override
     public void writeData(ProfileSample depthTempProfileSample, MeasureWrapper measure, MerlinParameters runtimeParameters,
                           DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
-                          MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<String> readDurationString)
+                          MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<String> readDurationString, AtomicReference<List<String>> seriesIds)
     {
         Path csvWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         boolean useSingleThreading = isSingleThreaded();
@@ -70,17 +67,19 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
             try(CloseableReentrantLock lock = ReadWriteLockManager.getInstance().getCloseableLock().lockIt())
             {
                 writeStart = Instant.now();
-                writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString);
+                writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
                 writeEnd = Instant.now();
             }
         }
         else
         {
             writeStart = Instant.now();
-            writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString);
+            writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
             writeEnd = Instant.now();
         }
         String successMsg = "Write to " + csvWritePath + " from " + measure.getSeriesString() + ReadWriteTimestampUtil.getDuration(writeStart, writeEnd);
+        //two write tasks
+        completionTracker.readWriteTaskCompleted();
         int percentCompleteAfterWrite = completionTracker.readWriteTaskCompleted();
         completionTracker.writeTaskCompleted();
         if(progressListener != null)
@@ -93,22 +92,33 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
     }
 
     private void writeCsv(ProfileSample depthTempProfileSample, Path csvWritePath, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
-                          MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener, AtomicReference<String> readDurationString)
+                          MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener, AtomicReference<String> readDurationString, AtomicReference<List<String>> seriesIds)
     {
-        String otherMeasureSeriesString = getPairedMeasureSeriesId(measure);
+        if(depthTempProfileSample == null)
+        {
+            return;
+        }
+        List<String> seriesIdList = seriesIds.get();
+        String seriesIdsString = String.join(",\n", seriesIdList);
         try
         {
-            String progressMsg = "Read " + depthTempProfileSample.getTempData().getSeriesId() + " \n and " + depthTempProfileSample.getDepthData().getSeriesId() + " | Is processed: "
-                    + measure.isProcessed() + " | Values read: " + depthTempProfileSample.getTempData().getEvents().size() + depthTempProfileSample.getDepthData().getEvents().size()
-                    + readDurationString;
+            int totalSize = depthTempProfileSample.getConstituentDataList().stream()
+                    .mapToInt(cdl -> cdl.getDataValues().size())
+                    .sum();
+            String progressMsg = "Read " + seriesIdsString + " | Is processed: "
+                    + measure.isProcessed() + " | Values read: " + totalSize + readDurationString;
             logFileLogger.log(progressMsg);
-            int percentComplete = completionTracker.readWriteTaskCompleted();
+            for(int i=1; i < depthTempProfileSample.getConstituentDataList().size(); i++)
+            {
+                completionTracker.readWriteTaskCompleted(); //1 read for every profile measure
+            }
+            int percentComplete = completionTracker.readWriteTaskCompleted(); // do the last read outside loop to get back completion percentage
             logProgress(progressListener, progressMsg, percentComplete);
             serializeDataToCsvFile(csvWritePath, depthTempProfileSample);
         }
         catch (IOException e)
         {
-            String failMsg = "Failed to write " +  measure.getSeriesString() + " \n and " + otherMeasureSeriesString + " to CSV!" + " Error: " + e.getMessage();
+            String failMsg = "Failed to write " +  seriesIdsString + " to CSV!" + " Error: " + e.getMessage();
             if(progressListener != null)
             {
                 progressListener.progress(failMsg, ProgressListener.MessageType.ERROR);
@@ -116,23 +126,6 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
             logFileLogger.log(failMsg);
             LOGGER.config(() -> failMsg);
         }
-    }
-
-    private String getPairedMeasureSeriesId(MeasureWrapper measure)
-    {
-        DSSPathname dssPathName = new DSSPathname(measure.getSeriesString());
-        String fPart = dssPathName.getFPart();
-        String bPart = dssPathName.getBPart();
-        String pairedFPart = fPart.substring(0, fPart.length() - 1).concat("2");
-        DSSPathname pairedPathName = new DSSPathname(dssPathName.toString());
-        pairedPathName.setFPart(pairedFPart);
-        if(bPart.toLowerCase().contains("temp"))
-        {
-            bPart = "Depth";
-        }
-        dssPathName.setFPart(pairedFPart);
-        dssPathName.setBPart(bPart);
-        return dssPathName.toString().replaceAll("^/|/$", "");
     }
 
     //scoped for unit testing
@@ -161,44 +154,53 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
         }
     }
 
-    Map<String, String> buildHeaderMapping(ProfileSample measure)
+    Map<String, String> buildHeaderMapping(ProfileSample sample)
     {
-        Map<String, String> retVal = new TreeMap<>();
+        Map<String, String> retVal = new LinkedHashMap<>();
         retVal.put("Date", "Date");
-        retVal.put(measure.getTempData().getParameter() + "(" + measure.getTempData().getUnits() + ")", "Temperature");
-        retVal.put(measure.getDepthData().getParameter() + "(" + measure.getDepthData().getUnits() + ")", "Depth");
+        Comparator<ProfileConstituentData> headerSorter = Comparator.comparing(o -> o.getParameter().toLowerCase().contains("temp") ? 0 : 1);
+        sample.getConstituentDataList().sort(headerSorter); //put temp before depth. We can easily update sorter here to manipulate header order
+        for(ProfileConstituentData profileConstituentData : sample.getConstituentDataList())
+        {
+            retVal.put(profileConstituentData.getParameter() + "(" + profileConstituentData.getUnit() + ")",
+                    getSerializableFieldForParam(profileConstituentData.getParameter()));
+        }
         return retVal;
     }
 
     private List<CsvDepthTempProfileSampleMeasurement> buildCsvDepthTempMeasurementForSample(ProfileSample sample)
     {
         List<CsvDepthTempProfileSampleMeasurement> retVal = new ArrayList<>();
-        DataWrapper depthData = sample.getDepthData();
-        DataWrapper tempData = sample.getTempData();
-        NavigableSet<EventWrapper> depthEvents = depthData.getEvents();
-        NavigableSet<EventWrapper> tempEvents = tempData.getEvents();
-        for(EventWrapper tempEvent : tempEvents)
+        ZonedDateTime sampleDateTime = sample.getDateTime();
+        ProfileConstituentData depthData = sample.getConstituentDataList().get(0);
+        ProfileConstituentData tempData = sample.getConstituentDataList().get(1);
+        if(depthData.getParameter().toLowerCase().contains("temp"))
         {
-            EventWrapper depthEvent = getEventForZonedDateTime(depthEvents, tempEvent.getDate());
-            if(depthEvent != null)
-            {
-                retVal.add(new CsvDepthTempProfileSampleMeasurement(tempEvent.getDate(), tempEvent.getValue(), depthEvent.getValue()));
-            }
+            tempData = sample.getConstituentDataList().get(0);
+            depthData = sample.getConstituentDataList().get(1);
+        }
+        List<Double> depths = depthData.getDataValues();
+        List<Double> temps = tempData.getDataValues();
+        for(int i=0; i < depths.size(); i++)
+        {
+            retVal.add(new CsvDepthTempProfileSampleMeasurement(sampleDateTime, temps.get(i), depths.get(i)));
         }
         return retVal;
     }
 
-    private EventWrapper getEventForZonedDateTime(NavigableSet<EventWrapper> events, ZonedDateTime dateTime)
+    private String getSerializableFieldForParam(String parameter)
     {
-        EventWrapper retVal = null;
-        for(EventWrapper event : events)
+        String retVal = "";
+        parameter = parameter.toLowerCase();
+        if(parameter.contains("temp"))
         {
-            if(event.getDate().equals(dateTime))
-            {
-                retVal = event;
-                break;
-            }
+            retVal = "Temperature"; //this is field specified in Csv POJO
         }
+        else if(parameter.contains("depth"))
+        {
+            retVal = "Depth"; //this is field specified in Csv POJO
+        }
+        //Add in other fields in csv pojo here to do mapping.
         return retVal;
     }
 
@@ -221,6 +223,18 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
         simpleModule.addSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer());
         simpleModule.addDeserializer(ZonedDateTime.class, new ZonedDateTimeDeserializer());
         simpleModule.addSerializer(Double.class, new DoubleSerializer());
+        simpleModule.addSerializer(Double[].class, new JsonSerializer<Double[]>()
+        {
+            @Override
+            public void serialize(Double[] value, JsonGenerator gen, SerializerProvider serializers)
+                    throws IOException
+            {
+                for (Double d : value)
+                {
+                    gen.writeNumber(d);
+                }
+            }
+        });
         mapper.registerModule(simpleModule);
         mapper.configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(), true);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

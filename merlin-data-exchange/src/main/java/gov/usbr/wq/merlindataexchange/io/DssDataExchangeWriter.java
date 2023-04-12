@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -34,7 +35,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter<TimeSerie
     @Override
     public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, MerlinParameters runtimeParameters, DataStore destinationDataStore,
                           MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled,
-                          AtomicReference<String> readDurationString)
+                          AtomicReference<String> readDurationString, AtomicReference<List<String>> logHelper)
     {
         Path dssWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         String seriesString = measure.getSeriesString();

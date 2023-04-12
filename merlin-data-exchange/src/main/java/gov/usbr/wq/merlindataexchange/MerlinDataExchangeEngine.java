@@ -439,7 +439,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
                     throw new UnsupportedQualityVersionException(dataExchangeSet.getQualityVersionName(), dataExchangeSet.getQualityVersionId());
                 }
                 List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
-                measures = reader.filterMeasuresToRead(measures);
+                measures = reader.filterMeasuresToRead(dataStoreDestination, dataExchangeSet, measures);
                 List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
                 measures.forEach(measure ->
                         measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, dataStoreSource, dataStoreDestination,
