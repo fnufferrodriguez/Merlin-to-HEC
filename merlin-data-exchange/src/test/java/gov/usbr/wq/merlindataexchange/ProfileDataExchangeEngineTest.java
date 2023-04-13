@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,7 +33,7 @@ final class ProfileDataExchangeEngineTest
         Path testDirectory = getTestDirectory();
         Path csvFile = testDirectory.resolve(mockFileName.replace(".xml", ".csv"));
         Files.deleteIfExists(csvFile);
-        Instant start = Instant.parse("2017-02-01T12:00:00Z");
+        Instant start = ZonedDateTime.parse("2009-09-15T09:58:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
         Instant end = Instant.parse("2018-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");

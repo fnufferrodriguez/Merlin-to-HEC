@@ -24,5 +24,5 @@ public interface DataExchangeReader<T> extends DataExchanger
                                   AtomicReference<String> readStart, AtomicReference<List<String>> logHelper);
     String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters);
 
-    List<MeasureWrapper> filterMeasuresToRead(DataStore dataStore, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures);
+    List<MeasureWrapper> filterMeasuresToRead(DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures);
 }

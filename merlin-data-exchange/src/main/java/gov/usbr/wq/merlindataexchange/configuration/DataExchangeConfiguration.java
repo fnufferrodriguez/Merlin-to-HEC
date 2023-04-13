@@ -20,7 +20,10 @@ public final class DataExchangeConfiguration
     public List<DataStore> getDataStores()
     {
         List<DataStore> dataStores = new ArrayList<>(_dataStores);
-        dataStores.addAll(new ArrayList<>(_dataStoreProfiles));
+        if(_dataStoreProfiles != null)
+        {
+            dataStores.addAll(new ArrayList<>(_dataStoreProfiles));
+        }
         return dataStores;
     }
 

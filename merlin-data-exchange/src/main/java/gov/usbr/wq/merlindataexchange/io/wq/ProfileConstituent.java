@@ -3,13 +3,13 @@ package gov.usbr.wq.merlindataexchange.io.wq;
 import java.util.List;
 import java.util.Objects;
 
-final class ProfileConstituentData
+final class ProfileConstituent
 {
     private final List<Double> _dataValues;
     private final String _parameter;
     private final String _unit;
 
-    ProfileConstituentData(String parameter, List<Double> dataValues, String unit)
+    ProfileConstituent(String parameter, List<Double> dataValues, String unit)
     {
         _dataValues = dataValues;
         _parameter = parameter;
@@ -42,7 +42,7 @@ final class ProfileConstituentData
         {
             return false;
         }
-        ProfileConstituentData that = (ProfileConstituentData) o;
+        ProfileConstituent that = (ProfileConstituent) o;
         return Objects.equals(_dataValues, that._dataValues) && Objects.equals(_parameter, that._parameter) && Objects.equals(_unit, that._unit);
     }
 

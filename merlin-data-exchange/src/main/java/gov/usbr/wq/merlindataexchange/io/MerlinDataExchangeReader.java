@@ -46,7 +46,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
             try
             {
                 UsernamePasswordHolder usernamePassword = runtimeParameters.getUsernamePasswordForUrl(merlinApiRoot);
-                retVal = retrieveDataAsType(usernamePassword, start, end, destDataStore, merlinApiRoot, measure, qualityVersionId, progressListener, logFileLogger,
+                retVal = retrieveDataAsType(usernamePassword, start, end, destDataStore, dataExchangeSet, cache, merlinApiRoot, measure, qualityVersionId, progressListener, logFileLogger,
                         isCancelled, fPartOverride, unitSystemToConvertTo, completionTracker, measure.isProcessed(), readDurationString, logHelper);
             }
             catch (UsernamePasswordNotFoundException e)
@@ -59,10 +59,10 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
         }, executorService);
     }
 
-    protected T retrieveDataAsType(UsernamePasswordHolder usernamePassword, Instant start, Instant end, DataStore dataStore, String merlinApiRoot,
-                                   MeasureWrapper measure, Integer qualityVersionId, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
-                                   AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo, MerlinExchangeCompletionTracker completionTracker,
-                                   Boolean isProcessed, AtomicReference<String> readDurationString, AtomicReference<List<String>> logHelper)
+    protected T retrieveDataAsType(UsernamePasswordHolder usernamePassword, Instant start, Instant end, DataStore dataStore, DataExchangeSet dataExchangeSet,
+                                   DataExchangeCache cache, String merlinApiRoot, MeasureWrapper measure, Integer qualityVersionId, ProgressListener progressListener,
+                                   MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo,
+                                   MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, AtomicReference<String> readDurationString, AtomicReference<List<String>> logHelper)
     {
         T retVal = null;
         try
@@ -70,7 +70,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
             TokenRegistry tokenRegistry = TokenRegistry.getRegistry();
             TokenContainer token = tokenRegistry.getToken(new ApiConnectionInfo(merlinApiRoot), usernamePassword.getUsername(), usernamePassword.getPassword());
             Instant readStart = Instant.now();
-            S data = retrieveData(start, end, merlinApiRoot, token, measure, qualityVersionId, dataStore, progressListener, logFileLogger, isCancelled, logHelper);
+            S data = retrieveData(start, end, dataExchangeSet, cache, merlinApiRoot, token, measure, qualityVersionId, dataStore, progressListener, logFileLogger, isCancelled, logHelper);
             Instant readEnd = Instant.now();
             readDurationString.set(ReadWriteTimestampUtil.getDuration(readStart, readEnd));
             if(data == null)
@@ -100,7 +100,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
                                        MerlinDataExchangeLogBody logFileLogger, MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed,
                                        Instant start, Instant end, AtomicReference<String> readDurationString);
 
-    protected abstract S retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure, Integer qualityVersionId,
+    protected abstract S retrieveData(Instant start, Instant end, DataExchangeSet dataExchangeSet, DataExchangeCache cache, String merlinApiRoot, TokenContainer token, MeasureWrapper measure, Integer qualityVersionId,
                                       DataStore sourceDataStore, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<List<String>> logHelper);
 
     @Override

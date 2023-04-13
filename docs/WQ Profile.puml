@@ -1,19 +1,14 @@
 @startuml
 
-class DepthTempProfileSamples {
-    - samples: List<DepthTempProfileSample>
-    - elevation: Double
-    - headers: Map<String, String>
+class ProfileSample {
+    - dateTime: ZonedDateTime
+    - constituentData: List<ProfileConstituentData>
 }
 
-class DepthTempProfileSample {
-    - measurements: List<DepthTempProfileSampleMeasurement>
-}
-
-class DepthTempProfileSampleMeasurement {
-    + depth: Double
-    + temperature: Double
-    + date: ZonedDateTime
+class ProfileConstituentData {
+    + data: List<Double>
+    + param: String
+    + unit: String
 }
 
 class CsvDepthTempProfileSampleMeasurement {
@@ -21,8 +16,7 @@ class CsvDepthTempProfileSampleMeasurement {
     //Used for csv serialization
 }
 
-DepthTempProfileSamples "1" --> "n"DepthTempProfileSample
-DepthTempProfileSample"1" --> "n"DepthTempProfileSampleMeasurement
+ProfileSample"1" --> "n"ProfileConstituentData
 CsvDepthTempProfileSampleMeasurement "1"--> "1" DepthTempProfileSampleMeasurement : composition
 
 @enduml

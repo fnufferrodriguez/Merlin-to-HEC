@@ -9,10 +9,10 @@ import java.util.List;
 @JacksonXmlRootElement(localName = "datastore-profile")
 public final class DataStoreProfile extends DataStore
 {
+    public static final String DEPTH = "Depth";
     @JacksonXmlProperty(localName = "constituents")
     private Constituents _constituents;
 
-    @JacksonXmlProperty(isAttribute = true, localName = "depth-parameter-name")
     private String _depthParameterName;
 
     public List<Constituent> getConstituents()
@@ -30,17 +30,17 @@ public final class DataStoreProfile extends DataStore
         return _depthParameterName;
     }
 
-    public void setDepthParameterName(String depthParameterName)
+    public Constituent getDepthConstituent()
     {
-        _depthParameterName = depthParameterName;
+        return getConstituentByParameter(DEPTH);
     }
 
-    public Constituent getDepthConstituent()
+    public Constituent getConstituentByParameter(String parameter)
     {
         Constituent retVal = null;
         for(Constituent constituent : getConstituents())
         {
-            if(constituent.getParameter().equalsIgnoreCase(getDepthParameterName()))
+            if(constituent.getParameter().equalsIgnoreCase(parameter))
             {
                 retVal = constituent;
                 break;

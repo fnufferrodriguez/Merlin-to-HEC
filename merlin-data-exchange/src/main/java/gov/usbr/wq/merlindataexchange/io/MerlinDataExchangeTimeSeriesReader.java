@@ -6,6 +6,7 @@ import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.TokenContainer;
 import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
+import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.NoEventsException;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
@@ -29,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.stream.Collectors.toList;
+
 @ServiceProvider(service = DataExchangeReader.class, position = 100, path = DataExchangeReader.LOOKUP_PATH
         + "/" + MerlinDataExchangeReader.MERLIN + "/" + MerlinDataExchangeTimeSeriesReader.TIMESERIES)
 public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchangeReader<DataWrapper, TimeSeriesContainer>
@@ -37,7 +40,8 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeTimeSeriesReader.class.getName());
 
     @Override
-    protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+    protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, String fPartOverride,
+                                                ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                 MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, Instant start, Instant end, AtomicReference<String> readDurationString)
     {
         TimeSeriesContainer retVal = null;
@@ -88,8 +92,9 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     }
 
     @Override
-    protected DataWrapper retrieveData(Instant start, Instant end, String merlinApiRoot, TokenContainer token, MeasureWrapper measure,
-                                       Integer qualityVersionId, DataStore sourceDataStore, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<List<String>> logHelper)
+    protected DataWrapper retrieveData(Instant start, Instant end, DataExchangeSet dataExchangeSet, DataExchangeCache cache, String merlinApiRoot, TokenContainer token, MeasureWrapper measure,
+                                       Integer qualityVersionId, DataStore sourceDataStore, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+                                       AtomicBoolean isCancelled, AtomicReference<List<String>> logHelper)
     {
             MerlinTimeSeriesDataAccess access = new MerlinTimeSeriesDataAccess();
             DataWrapper retVal = null;
@@ -108,8 +113,10 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     }
 
     @Override
-    public List<MeasureWrapper> filterMeasuresToRead(DataStore dataStore, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures)
+    public List<MeasureWrapper> filterMeasuresToRead(DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures)
     {
-        return measures; //no filtering for time series. Each read will handle a single measure.
+        //filter out profile data for time series
+        return measures.stream().filter(m -> !"Profile".equalsIgnoreCase(m.getType()))
+                .collect(toList());
     }
 }

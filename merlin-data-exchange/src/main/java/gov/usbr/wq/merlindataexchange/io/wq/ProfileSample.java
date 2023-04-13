@@ -7,9 +7,9 @@ import java.util.Objects;
 final class ProfileSample
 {
     private final ZonedDateTime _dateTime;
-    private final List<ProfileConstituentData> _constituentDataList;
+    private final List<ProfileConstituent> _constituentDataList;
 
-    public ProfileSample(ZonedDateTime dateTime, List<ProfileConstituentData> constituentDataList)
+    public ProfileSample(ZonedDateTime dateTime, List<ProfileConstituent> constituentDataList)
     {
         _dateTime = dateTime;
         _constituentDataList = constituentDataList;
@@ -20,7 +20,7 @@ final class ProfileSample
         return _dateTime;
     }
 
-    List<ProfileConstituentData> getConstituentDataList()
+    List<ProfileConstituent> getConstituentDataList()
     {
         return _constituentDataList;
     }

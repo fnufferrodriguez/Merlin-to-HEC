@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 200, path = DataExchangeWriter.LOOKUP_PATH
         + "/" + CsvDepthTempProfileWriter.CSV)
-public final class CsvDepthTempProfileWriter implements DataExchangeWriter<ProfileSample>
+public final class CsvDepthTempProfileWriter implements DataExchangeWriter<List<ProfileSample>>
 {
     private static final Logger LOGGER = Logger.getLogger(CsvDepthTempProfileWriter.class.getName());
     public static final String CSV = "csv";
@@ -32,10 +32,14 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
 
     @Override
-    public void writeData(ProfileSample depthTempProfileSample, MeasureWrapper measure, MerlinParameters runtimeParameters,
+    public void writeData(List<ProfileSample> depthTempProfileSamples, MeasureWrapper measure, MerlinParameters runtimeParameters,
                           DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
                           MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<String> readDurationString, AtomicReference<List<String>> seriesIds)
     {
+        if(depthTempProfileSamples == null)
+        {
+            return;
+        }
         Path csvWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         boolean useSingleThreading = isSingleThreaded();
         Instant writeStart;
@@ -45,14 +49,14 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
             try(CloseableReentrantLock lock = ReadWriteLockManager.getInstance().getCloseableLock().lockIt())
             {
                 writeStart = Instant.now();
-                writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
+                writeCsv(depthTempProfileSamples, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
                 writeEnd = Instant.now();
             }
         }
         else
         {
             writeStart = Instant.now();
-            writeCsv(depthTempProfileSample, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
+            writeCsv(depthTempProfileSamples, csvWritePath, measure, completionTracker, logFileLogger, progressListener, readDurationString, seriesIds);
             writeEnd = Instant.now();
         }
         String successMsg = "Write to " + csvWritePath + " from " + measure.getSeriesString() + ReadWriteTimestampUtil.getDuration(writeStart, writeEnd);
@@ -69,10 +73,10 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
 
     }
 
-    private void writeCsv(ProfileSample depthTempProfileSample, Path csvWritePath, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
+    private void writeCsv(List<ProfileSample> depthTempProfileSamples, Path csvWritePath, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
                           MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener, AtomicReference<String> readDurationString, AtomicReference<List<String>> seriesIds)
     {
-        if(depthTempProfileSample == null)
+        if(depthTempProfileSamples == null)
         {
             return;
         }
@@ -80,19 +84,21 @@ public final class CsvDepthTempProfileWriter implements DataExchangeWriter<Profi
         String seriesIdsString = String.join(",\n", seriesIdList);
         try
         {
-            int totalSize = depthTempProfileSample.getConstituentDataList().stream()
-                    .mapToInt(cdl -> cdl.getDataValues().size())
+            int totalSize = depthTempProfileSamples.stream()
+                    .mapToInt(sample -> sample.getConstituentDataList().stream()
+                        .mapToInt(cdl -> cdl.getDataValues().size())
+                        .sum())
                     .sum();
             String progressMsg = "Read " + seriesIdsString + " | Is processed: "
                     + measure.isProcessed() + " | Values read: " + totalSize + readDurationString;
             logFileLogger.log(progressMsg);
-            for(int i=1; i < depthTempProfileSample.getConstituentDataList().size(); i++)
+            for(int i=1; i < depthTempProfileSamples.get(0).getConstituentDataList().size(); i++)
             {
                 completionTracker.readWriteTaskCompleted(); //1 read for every profile measure
             }
             int percentComplete = completionTracker.readWriteTaskCompleted(); // do the last read outside loop to get back completion percentage
             logProgress(progressListener, progressMsg, percentComplete);
-            CsvProfileObjectMapper.serializeDataToCsvFile(csvWritePath, depthTempProfileSample);
+            CsvProfileObjectMapper.serializeDataToCsvFile(csvWritePath, depthTempProfileSamples);
         }
         catch (IOException e)
         {
