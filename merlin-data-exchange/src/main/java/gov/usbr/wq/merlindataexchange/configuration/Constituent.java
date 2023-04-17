@@ -10,9 +10,6 @@ public final class Constituent
     @JacksonXmlProperty(isAttribute = true, localName = "unit")
     private String _unit;
 
-    @JacksonXmlProperty(isAttribute = true, localName = "index")
-    private Integer _index;
-
     public String getParameter()
     {
         return _parameter;
@@ -33,13 +30,4 @@ public final class Constituent
         _unit = unit;
     }
 
-    public Integer getIndex()
-    {
-        return _index;
-    }
-
-    public void setIndex(Integer index)
-    {
-        _index = index;
-    }
 }

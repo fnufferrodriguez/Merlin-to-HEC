@@ -8,8 +8,8 @@
         <datastore-type>csv</datastore-type>
         <path>$WATERSHED/merlin_mock_config_profile.csv</path>
         <constituents>
-            <constituent parameter="Temp-Water" unit="C" index="1"/>
-            <constituent parameter="Depth" unit="ft" index="2"/>
+            <constituent parameter="Temp-Water" unit="C"/>
+            <constituent parameter="Depth" unit="ft"/>
         </constituents>
     </datastore-profile>
     <data-exchange-set id="Sac._BC_Shasta WTemp Profiles" source-id="www.grabdata2.com" template-id="123" template-name = "Sac._BC_Shasta WTemp Profiles" quality-version-id="1" quality-version-name = "Boundary Condition" unit-system="SI">

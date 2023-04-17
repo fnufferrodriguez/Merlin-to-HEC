@@ -280,9 +280,10 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
                 DataWrapper depthData = dataWrapper.get();
                 long multiple = ProfileDataConverter.getSignificantChangeTimeStepMultiple();
                 long minTimeStep = getMinTimeStep(depthData.getTimestep());
-                int maxTimeStep = getMaxTimeStep(depthData.getTimestep());
-                Instant newStart = start.minusSeconds((maxTimeStep * multiple-1) * 60);
-                Instant newEnd = end.plusSeconds((maxTimeStep * multiple-1) *60);
+                long maxTimeStep = getMaxTimeStep(depthData.getTimestep());
+                long maxTimeJumpBeforeConsideredSignificantChange = maxTimeStep * multiple - minTimeStep;
+                Instant newStart = start.minusSeconds(maxTimeJumpBeforeConsideredSignificantChange * 60);
+                Instant newEnd = end.plusSeconds(maxTimeJumpBeforeConsideredSignificantChange *60);
                 //build two new small data sets from original moving back/forward to just before what we consider to be a significant change
                 DataWrapper newStartData = access.getEventsBySeries(new ApiConnectionInfo(merlinApiRoot), token, depthMeasure, qualityVersionId, newStart, start);
                 DataWrapper newEndData = access.getEventsBySeries(new ApiConnectionInfo(merlinApiRoot), token, depthMeasure, qualityVersionId, end, newEnd);

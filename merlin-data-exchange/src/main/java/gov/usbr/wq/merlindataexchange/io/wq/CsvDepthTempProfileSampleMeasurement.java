@@ -1,25 +1,19 @@
 package gov.usbr.wq.merlindataexchange.io.wq;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-@JsonPropertyOrder({ "Date", "Temperature", "Depth" })
+@JsonPropertyOrder({ "Date", "_temperature", "_depth" })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 final class CsvDepthTempProfileSampleMeasurement
 {
     @JsonProperty("Date")
     private ZonedDateTime _dateTime;
-    @JsonProperty("Temperature")
     private Double _temperature;
-    @JsonProperty("Depth")
     private Double _depth;
     CsvDepthTempProfileSampleMeasurement(ZonedDateTime dateTime, Double temperature, Double depth)
     {

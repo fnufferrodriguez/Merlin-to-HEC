@@ -5,7 +5,7 @@ import java.time.ZonedDateTime;
 final class CsvProfileRow
 {
     private ZonedDateTime _date;
-    private CsvDataMapping _mapping = new CsvDataMapping();
+    private final CsvDataMapping _mapping = new CsvDataMapping();
 
     public ZonedDateTime getDate()
     {

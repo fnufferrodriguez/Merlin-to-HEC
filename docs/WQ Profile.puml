@@ -2,22 +2,17 @@
 
 class ProfileSample {
     - dateTime: ZonedDateTime
-    - constituentData: List<ProfileConstituentData>
+    - constituentData: List<ProfileConstituent>
 }
 
-class ProfileConstituentData {
+class ProfileConstituent {
     + data: List<Double>
     + param: String
     + unit: String
 }
 
-class CsvDepthTempProfileSampleMeasurement {
-    - delegate: DepthTempProfileSampleMeasurement
-    //Used for csv serialization
-}
 
-ProfileSample"1" --> "n"ProfileConstituentData
-CsvDepthTempProfileSampleMeasurement "1"--> "1" DepthTempProfileSampleMeasurement : composition
+ProfileSample"1" --> "n"ProfileConstituent
 
 @enduml
 

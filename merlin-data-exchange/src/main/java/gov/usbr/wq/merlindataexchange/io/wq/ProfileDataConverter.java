@@ -24,7 +24,8 @@ final class ProfileDataConverter
         return constituentDataList.get(0);
     }
 
-    static List<ProfileSample> splitDataIntoProfileSamples(List<ProfileConstituent> constituents, List<ZonedDateTime> readingDateTimes, int maxTimeStep, boolean removeFirstProfile, boolean removeLastProfile)
+    static List<ProfileSample> splitDataIntoProfileSamples(List<ProfileConstituent> constituents, List<ZonedDateTime> readingDateTimes,
+                                                           int maxTimeStep, boolean removeFirstProfile, boolean removeLastProfile)
     {
         List<List<ZonedDateTime>> dateTimeGroups = separateDateTimeGroups(constituents, readingDateTimes, maxTimeStep);
         List<ProfileSample> retVal = new ArrayList<>();
@@ -84,7 +85,6 @@ final class ProfileDataConverter
 
     private static List<List<ZonedDateTime>> separateDateTimeGroups(List<ProfileConstituent> constituents, List<ZonedDateTime> readingDateTimes, int maxTimeStep)
     {
-        double depthPercentDecrease = getSignificantChangeDepthPercentDecrease();
         List<List<ZonedDateTime>> separatedDateTimes = new ArrayList<>();
         ZonedDateTime previousTime = null;
         Optional<ProfileConstituent> depthConstituentOpt = constituents.stream()
@@ -106,8 +106,7 @@ final class ProfileDataConverter
                 {
                     Double currentDepth = profileConstituent.getDataValues().get(i);
                     Double previousDepth = profileConstituent.getDataValues().get(i - 1);
-                    if (isSignificantTimeChange(previousTime, currentTime, maxTimeStep) ||
-                            isSignificantDepthChange(currentDepth, previousDepth))
+                    if (isDifferenceSignificantChange(previousTime, currentTime, maxTimeStep, previousDepth, currentDepth))
                     {
                         separatedDateTimes.add(new ArrayList<>());
                         separatedDateTimes.get(separatedDateTimes.size()-1).add(currentTime);
@@ -128,7 +127,7 @@ final class ProfileDataConverter
         return isDecreaseByPercent(currentDepth, previousDepth, getSignificantChangeDepthPercentDecrease());
     }
 
-    private static boolean isSignificantTimeChange(ZonedDateTime previousTime, ZonedDateTime currentTime, int maxTimeStep)
+    private static boolean isSignificantTimeChange(ZonedDateTime previousTime, ZonedDateTime currentTime, long maxTimeStep)
     {
         Duration timeDiff = Duration.between(previousTime, currentTime);
         long timeStepMultiple = getSignificantChangeTimeStepMultiple();
@@ -168,7 +167,7 @@ final class ProfileDataConverter
         return retVal;
     }
 
-    static boolean isDifferenceSignificantChange(ZonedDateTime previousDateTime, ZonedDateTime currentDateTime, int maxTimeStep, Double previousDepth, Double currentDepth)
+    static boolean isDifferenceSignificantChange(ZonedDateTime previousDateTime, ZonedDateTime currentDateTime, long maxTimeStep, Double previousDepth, Double currentDepth)
     {
         return isSignificantTimeChange(previousDateTime, currentDateTime, maxTimeStep)
                 || isSignificantDepthChange(currentDepth, previousDepth);
