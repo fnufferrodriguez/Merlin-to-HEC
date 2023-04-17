@@ -11,7 +11,7 @@ public final class DataStoreProfile extends DataStore
 {
     public static final String DEPTH = "Depth";
     @JacksonXmlProperty(localName = "constituents")
-    private Constituents _constituents;
+    private Constituents _constituents = new Constituents();
 
     private String _depthParameterName;
 

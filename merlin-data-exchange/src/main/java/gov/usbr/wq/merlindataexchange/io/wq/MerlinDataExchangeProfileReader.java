@@ -162,7 +162,8 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         }
         //convert the units
         dataValues = convertUnits(dataValues, paramId.getParameterId(), dataWrapper.getUnits(), convertToUnitSystemId);
-        return new ProfileConstituent(dataWrapper.getParameter(), dataValues, unit);
+        String convertedUnit = Parameter.getUnitsStringForSystem(paramId.getParameterId(), convertToUnitSystemId);
+        return new ProfileConstituent(dataWrapper.getParameter(), dataValues, convertedUnit);
     }
 
     private int getUnitSystemIdForUnitSystem(String unitSystemToConvertTo)
