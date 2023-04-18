@@ -13,8 +13,6 @@ public final class DataStoreProfile extends DataStore
     @JacksonXmlProperty(localName = "constituents")
     private Constituents _constituents = new Constituents();
 
-    private String _depthParameterName;
-
     public List<Constituent> getConstituents()
     {
         return _constituents.getConstituents();
@@ -23,16 +21,6 @@ public final class DataStoreProfile extends DataStore
     public void setConstituents(Constituents constituents)
     {
         _constituents = constituents;
-    }
-
-    public String getDepthParameterName()
-    {
-        return _depthParameterName;
-    }
-
-    public Constituent getDepthConstituent()
-    {
-        return getConstituentByParameter(DEPTH);
     }
 
     public Constituent getConstituentByParameter(String parameter)

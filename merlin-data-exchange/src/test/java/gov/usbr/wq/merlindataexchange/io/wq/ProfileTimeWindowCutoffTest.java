@@ -1,5 +1,12 @@
-package gov.usbr.wq.merlindataexchange;
+package gov.usbr.wq.merlindataexchange.io.wq;
 
+import gov.usbr.wq.dataaccess.mapper.MerlinObjectMapper;
+import gov.usbr.wq.merlindataexchange.DataExchangeEngine;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeEngineBuilder;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
+import gov.usbr.wq.merlindataexchange.ResourceAccess;
+import gov.usbr.wq.merlindataexchange.TestLogProgressListener;
+import gov.usbr.wq.merlindataexchange.io.wq.CsvProfileObjectMapper;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
@@ -19,11 +26,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-final class ProfileDataExchangeEngineTest
+final class ProfileTimeWindowCutoffTest
 {
     @Test
-    void testCSVProfileExchange() throws IOException
+    void testStartCutoff() throws IOException
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
@@ -33,7 +41,8 @@ final class ProfileDataExchangeEngineTest
         Path testDirectory = getTestDirectory();
         Path csvFile = testDirectory.resolve(mockFileName.replace(".xml", ".csv"));
         Files.deleteIfExists(csvFile);
-        Instant start = ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
+        ZonedDateTime startDateTime = ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        Instant start = startDateTime.toInstant();
         Instant end = Instant.parse("2018-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
@@ -54,24 +63,27 @@ final class ProfileDataExchangeEngineTest
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
                 .withParameters(params)
-                .withProgressListener(buildLoggingProgressListener())
+                .withProgressListener(new TestLogProgressListener())
                 .build();
         MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        List<ProfileSample> profiles = CsvProfileObjectMapper.deserializeDataFromCsv(csvFile);
+        assertNotEquals(startDateTime, profiles.get(0).getDateTime());
     }
 
     @Test
-    void testCSVProfileExchangeNoConstituents() throws IOException
+    void testStartNotCutoff() throws IOException
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        String mockFileName = "merlin_mock_config_profile_no_constituents.xml";
+        String mockFileName = "merlin_mock_config_profile.xml";
         Path mockXml = getMockXml(mockFileName);
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Path csvFile = testDirectory.resolve(mockFileName.replace(".xml", ".csv"));
         Files.deleteIfExists(csvFile);
-        Instant start = ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
+        ZonedDateTime startDateTime = ZonedDateTime.parse("2009-09-15T09:58:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        Instant start = startDateTime.toInstant();
         Instant end = Instant.parse("2018-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
@@ -92,25 +104,30 @@ final class ProfileDataExchangeEngineTest
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
                 .withParameters(params)
-                .withProgressListener(buildLoggingProgressListener())
+                .withProgressListener(new TestLogProgressListener())
                 .build();
         MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        List<ProfileSample> profiles = CsvProfileObjectMapper.deserializeDataFromCsv(csvFile);
+        assertEquals(startDateTime, profiles.get(0).getDateTime());
     }
 
     @Test
-    void testCSVProfileExchangeNoConstituentsNoUnitSystem() throws IOException
+    void testEndCutoff() throws IOException
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        String mockFileName = "merlin_mock_config_profile_no_constituents_no_unit_system.xml";
+        String mockFileName = "merlin_mock_config_profile.xml";
         Path mockXml = getMockXml(mockFileName);
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Path csvFile = testDirectory.resolve(mockFileName.replace(".xml", ".csv"));
         Files.deleteIfExists(csvFile);
-        Instant start = ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
-        Instant end = Instant.parse("2018-02-21T12:00:00Z");
+        ZonedDateTime startDateTime = ZonedDateTime.parse("2009-07-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        ZonedDateTime endDateTime = ZonedDateTime.parse("2009-09-01T10:26:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        ZonedDateTime startDateTimeForLastProfile = ZonedDateTime.parse("2009-09-01T10:17:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        Instant start = startDateTime.toInstant();
+        Instant end = endDateTime.toInstant();
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
@@ -130,15 +147,55 @@ final class ProfileDataExchangeEngineTest
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
                 .withParameters(params)
-                .withProgressListener(buildLoggingProgressListener())
+                .withProgressListener(new TestLogProgressListener())
                 .build();
         MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
         assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        List<ProfileSample> profiles = CsvProfileObjectMapper.deserializeDataFromCsv(csvFile);
+        assertNotEquals(startDateTimeForLastProfile, profiles.get(profiles.size()-1).getDateTime());
     }
 
-    private TestLogProgressListener buildLoggingProgressListener() throws IOException
+    @Test
+    void testEndNotCutoff() throws IOException
     {
-        return new TestLogProgressListener();
+        String username = ResourceAccess.getUsername();
+        char[] password = ResourceAccess.getPassword();
+        String mockFileName = "merlin_mock_config_profile.xml";
+        Path mockXml = getMockXml(mockFileName);
+        List<Path> mocks = Collections.singletonList(mockXml);
+        Path testDirectory = getTestDirectory();
+        Path csvFile = testDirectory.resolve(mockFileName.replace(".xml", ".csv"));
+        Files.deleteIfExists(csvFile);
+        ZonedDateTime startDateTime = ZonedDateTime.parse("2009-07-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        ZonedDateTime endDateTime = ZonedDateTime.parse("2009-09-01T10:27:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        ZonedDateTime startDateTimeForLastProfile = ZonedDateTime.parse("2009-09-01T10:17:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        Instant start = startDateTime.toInstant();
+        Instant end = endDateTime.toInstant();
+        StoreOptionImpl storeOption = new StoreOptionImpl();
+        storeOption.setRegular("0-replace-all");
+        storeOption.setIrregular("0-delete_insert");
+        MerlinParameters params = new MerlinParametersBuilder()
+                .withWatershedDirectory(testDirectory)
+                .withLogFileDirectory(testDirectory)
+                .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                        .forUrl("https://www.grabdata2.com")
+                        .setUsername(username)
+                        .andPassword(password)
+                        .build())
+                .withStoreOption(storeOption)
+                .withStart(start)
+                .withEnd(end)
+                .withFPartOverride("fPart")
+                .build();
+        DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
+                .withConfigurationFiles(mocks)
+                .withParameters(params)
+                .withProgressListener(new TestLogProgressListener())
+                .build();
+        MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
+        assertEquals(MerlinDataExchangeStatus.COMPLETE_SUCCESS, status);
+        List<ProfileSample> profiles = CsvProfileObjectMapper.deserializeDataFromCsv(csvFile);
+        assertEquals(startDateTimeForLastProfile, profiles.get(profiles.size()-1).getDateTime());
     }
 
     private Path getMockXml(String fileName) throws IOException

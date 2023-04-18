@@ -2,9 +2,11 @@ package gov.usbr.wq.merlindataexchange;
 
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import gov.usbr.wq.merlindataexchange.configuration.Constituent;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import hec.heclib.util.Unit;
 import org.xml.sax.SAXException;
@@ -47,6 +49,20 @@ public final class MerlinDataExchangeParser
             if(retVal.getDataStores() == null)
             {
                 throw new MerlinConfigParseException(configFilepath, "Missing data stores");
+            }
+            for(DataStore dataStore : retVal.getDataStores())
+            {
+                if(dataStore instanceof DataStoreProfile)
+                {
+                    DataStoreProfile dataStoreProfile = (DataStoreProfile) dataStore;
+                    for(Constituent constituent : dataStoreProfile.getConstituents())
+                    {
+                        if(constituent.getParameter() == null)
+                        {
+                            throw new MerlinConfigParseException(configFilepath, "Constituent in data-store " + dataStore.getId() + " missing parameter name");
+                        }
+                    }
+                }
             }
             validateParsedConfig(configFilepath, retVal);
             return retVal;
