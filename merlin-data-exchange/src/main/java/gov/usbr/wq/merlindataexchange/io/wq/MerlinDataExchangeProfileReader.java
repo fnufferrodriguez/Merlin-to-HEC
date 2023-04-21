@@ -17,6 +17,7 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeReader;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeReader;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
 import hec.data.Parameter;
 import hec.data.Units;
 import hec.data.UnitsConversionException;
@@ -44,16 +45,16 @@ import static java.util.stream.Collectors.toList;
 
 @ServiceProvider(service = DataExchangeReader.class, position = 200, path = DataExchangeReader.LOOKUP_PATH
         + "/" + MerlinDataExchangeReader.MERLIN + "/" + MerlinDataExchangeProfileReader.PROFILE)
-public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeReader<MerlinProfileDataWrappers, SortedSet<ProfileSample>>
+public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeReader<MerlinProfileParameters, MerlinProfileDataWrappers, SortedSet<ProfileSample>>
 {
     public static final String PROFILE = "profile";
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeProfileReader.class.getName());
 
     @Override
     protected SortedSet<ProfileSample> convertToType(MerlinProfileDataWrappers dataWrappers, DataStore dataStore, String unitSystemToConvertTo,
-                                          String fPartOverride, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
-                                          MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed,
-                                          Instant start, Instant end, AtomicReference<String> readDurationString)
+                                                     MerlinProfileParameters parameters, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+                                                     MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed,
+                                                     Instant start, Instant end, AtomicReference<String> readDurationString)
     {
         SortedSet<ProfileSample> retVal = null;
         if(!dataWrappers.isEmpty())

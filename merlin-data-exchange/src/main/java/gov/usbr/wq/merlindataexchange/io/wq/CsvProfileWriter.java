@@ -10,7 +10,7 @@ import gov.usbr.wq.merlindataexchange.io.CloseableReentrantLock;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteLockManager;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteTimestampUtil;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
 import hec.ui.ProgressListener;
 import rma.services.annotations.ServiceProvider;
 
@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toList;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 200, path = DataExchangeWriter.LOOKUP_PATH
         + "/" + MerlinDataExchangeProfileReader.PROFILE + "/" + CsvProfileWriter.CSV)
-public final class CsvProfileWriter implements DataExchangeWriter<SortedSet<ProfileSample>>
+public final class CsvProfileWriter implements DataExchangeWriter<MerlinProfileParameters, SortedSet<ProfileSample>>
 {
     private static final Logger LOGGER = Logger.getLogger(CsvProfileWriter.class.getName());
     public static final String CSV = "csv";
@@ -37,7 +37,7 @@ public final class CsvProfileWriter implements DataExchangeWriter<SortedSet<Prof
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
 
     @Override
-    public void writeData(SortedSet<ProfileSample> profileSamples, MeasureWrapper measure, DataExchangeSet set, MerlinParameters runtimeParameters,
+    public void writeData(SortedSet<ProfileSample> profileSamples, MeasureWrapper measure, DataExchangeSet set, MerlinProfileParameters runtimeParameters,
                           DataExchangeCache cache, DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
                           MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, AtomicReference<String> readDurationString)
     {

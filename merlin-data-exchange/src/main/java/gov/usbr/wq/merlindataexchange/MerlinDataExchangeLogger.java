@@ -10,7 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-final class MerlinDataExchangeLogger
+public final class MerlinDataExchangeLogger
 {
 
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeLogger.class.getName());
@@ -27,7 +27,7 @@ final class MerlinDataExchangeLogger
         _logFile = logFile;
     }
 
-    synchronized void logToHeader(String logMessage)
+    public synchronized void logToHeader(String logMessage)
     {
         _header.append(logMessage);
         _header.append("\n");

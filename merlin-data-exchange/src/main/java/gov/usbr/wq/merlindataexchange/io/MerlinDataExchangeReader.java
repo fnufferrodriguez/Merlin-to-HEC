@@ -23,19 +23,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeReader<T>
+public abstract class MerlinDataExchangeReader<P extends MerlinParameters, S, T> implements DataExchangeReader<P, T>
 {
     public static final String MERLIN = "merlin";
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeReader.class.getName());
     @Override
-    public CompletableFuture<T> readData(DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters, DataStore sourceDataStore, DataStore destDataStore, DataExchangeCache cache,
+    public CompletableFuture<T> readData(DataExchangeSet dataExchangeSet, P runtimeParameters, DataStore sourceDataStore, DataStore destDataStore, DataExchangeCache cache,
                                          MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, AtomicBoolean isCancelled,
                                          MerlinDataExchangeLogBody logFileLogger, ExecutorService executorService, AtomicReference<String> readDurationString)
     {
         String merlinApiRoot = getSourcePath(sourceDataStore, runtimeParameters);
         Instant start = runtimeParameters.getStart();
         Instant end = runtimeParameters.getEnd();
-        String fPartOverride = runtimeParameters.getFPartOverride();
         QualityVersionWrapper qualityVersion = QualityVersionFromSetUtil.getQualityVersionIdFromDataExchangeSet(dataExchangeSet, cache).orElse(null);
         String unitSystemToConvertTo = dataExchangeSet.getUnitSystem();
         Integer qualityVersionId = qualityVersion == null ? null : qualityVersion.getQualityVersionID();
@@ -46,7 +45,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
             {
                 UsernamePasswordHolder usernamePassword = runtimeParameters.getUsernamePasswordForUrl(merlinApiRoot);
                 retVal = retrieveDataAsType(usernamePassword, start, end, destDataStore, dataExchangeSet, cache, merlinApiRoot, measure, qualityVersionId, progressListener, logFileLogger,
-                        isCancelled, fPartOverride, unitSystemToConvertTo, completionTracker, measure.isProcessed(), readDurationString);
+                        isCancelled, runtimeParameters, unitSystemToConvertTo, completionTracker, measure.isProcessed(), readDurationString);
             }
             catch (UsernamePasswordNotFoundException e)
             {
@@ -60,7 +59,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
 
     protected T retrieveDataAsType(UsernamePasswordHolder usernamePassword, Instant start, Instant end, DataStore dataStore, DataExchangeSet dataExchangeSet,
                                    DataExchangeCache cache, String merlinApiRoot, MeasureWrapper measure, Integer qualityVersionId, ProgressListener progressListener,
-                                   MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, String fPartOverride, String unitSystemToConvertTo,
+                                   MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled, P runTimeParameters, String unitSystemToConvertTo,
                                    MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, AtomicReference<String> readDurationString)
     {
         T retVal = null;
@@ -84,7 +83,7 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
             }
             else if(!isCancelled.get())
             {
-                retVal = convertToType(data, dataStore, unitSystemToConvertTo, fPartOverride, progressListener, logFileLogger, completionTracker, isProcessed, start, end, readDurationString);
+                retVal = convertToType(data, dataStore, unitSystemToConvertTo, runTimeParameters, progressListener, logFileLogger, completionTracker, isProcessed, start, end, readDurationString);
             }
         }
         catch (HttpAccessException e)
@@ -95,12 +94,13 @@ public abstract class MerlinDataExchangeReader<S, T> implements DataExchangeRead
         return retVal;
     }
 
-    protected abstract T convertToType(S data, DataStore sourceDataStore, String unitSystemToConvertTo, String fPartOverride, ProgressListener progressListener,
+    protected abstract T convertToType(S data, DataStore sourceDataStore, String unitSystemToConvertTo, P parameters, ProgressListener progressListener,
                                        MerlinDataExchangeLogBody logFileLogger, MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed,
                                        Instant start, Instant end, AtomicReference<String> readDurationString);
 
-    protected abstract S retrieveData(Instant start, Instant end, DataExchangeSet dataExchangeSet, DataExchangeCache cache, String merlinApiRoot, TokenContainer token, MeasureWrapper measure, Integer qualityVersionId,
-                                      DataStore sourceDataStore, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled);
+    protected abstract S retrieveData(Instant start, Instant end, DataExchangeSet dataExchangeSet, DataExchangeCache cache, String merlinApiRoot, TokenContainer token,
+                                      MeasureWrapper measure, Integer qualityVersionId, DataStore sourceDataStore, ProgressListener progressListener,
+                                      MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled);
 
     @Override
     public String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters)

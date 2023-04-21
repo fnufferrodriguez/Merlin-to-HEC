@@ -12,12 +12,12 @@ public final class DataExchangeWriterFactory
         throw new AssertionError("Factory Class");
     }
 
-    public static DataExchangeWriter<?> lookupWriter(DataStore destination, DataExchangeSet set) throws DataExchangeLookupException
+    public static DataExchangeWriter<?, ?> lookupWriter(DataStore destination, DataExchangeSet set) throws DataExchangeLookupException
     {
         String delimiter = "/";
         String lookupPath = DataExchangeWriter.LOOKUP_PATH + delimiter + set.getDataType() + delimiter + destination.getDataStoreType();
         Lookup lookup = Lookups.forPath(lookupPath);
-        DataExchangeWriter<?> retVal = lookup.lookup(DataExchangeWriter.class);
+        DataExchangeWriter<?, ?> retVal = lookup.lookup(DataExchangeWriter.class);
         if(retVal == null)
         {
             throw new DataExchangeLookupException(destination);

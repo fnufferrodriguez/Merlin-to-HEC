@@ -14,12 +14,12 @@ import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public interface DataExchangeWriter<T> extends DataExchanger
+public interface DataExchangeWriter<P extends MerlinParameters, T> extends DataExchanger
 {
 
     String LOOKUP_PATH = "dataexchange/reader";
 
-    void writeData(T dataObject, MeasureWrapper seriesPath, DataExchangeSet set, MerlinParameters runtimeParameters, DataExchangeCache cache, DataStore destinationDataStore,
+    void writeData(T dataObject, MeasureWrapper seriesPath, DataExchangeSet set, P runtimeParameters, DataExchangeCache cache, DataStore destinationDataStore,
                    MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logger,
                    AtomicBoolean isCancelled, AtomicReference<String> readStart);
 

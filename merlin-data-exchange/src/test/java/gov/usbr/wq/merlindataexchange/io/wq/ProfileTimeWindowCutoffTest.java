@@ -6,8 +6,8 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
 import gov.usbr.wq.merlindataexchange.ResourceAccess;
 import gov.usbr.wq.merlindataexchange.TestLogProgressListener;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
 import hec.io.impl.StoreOptionImpl;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +46,7 @@ final class ProfileTimeWindowCutoffTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinProfileParameters params = new MerlinProfileParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -54,10 +54,8 @@ final class ProfileTimeWindowCutoffTest
                         .setUsername(username)
                         .andPassword(password)
                         .build())
-                .withStoreOption(storeOption)
                 .withStart(start)
                 .withEnd(end)
-                .withFPartOverride("fPart")
                 .build();
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
@@ -87,7 +85,7 @@ final class ProfileTimeWindowCutoffTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinProfileParameters params = new MerlinProfileParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -95,10 +93,8 @@ final class ProfileTimeWindowCutoffTest
                         .setUsername(username)
                         .andPassword(password)
                         .build())
-                .withStoreOption(storeOption)
                 .withStart(start)
                 .withEnd(end)
-                .withFPartOverride("fPart")
                 .build();
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
@@ -130,7 +126,7 @@ final class ProfileTimeWindowCutoffTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinProfileParameters params = new MerlinProfileParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -138,10 +134,8 @@ final class ProfileTimeWindowCutoffTest
                         .setUsername(username)
                         .andPassword(password)
                         .build())
-                .withStoreOption(storeOption)
                 .withStart(start)
                 .withEnd(end)
-                .withFPartOverride("fPart")
                 .build();
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)
@@ -173,7 +167,7 @@ final class ProfileTimeWindowCutoffTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinProfileParameters params = new MerlinProfileParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -181,10 +175,8 @@ final class ProfileTimeWindowCutoffTest
                         .setUsername(username)
                         .andPassword(password)
                         .build())
-                .withStoreOption(storeOption)
                 .withStart(start)
                 .withEnd(end)
-                .withFPartOverride("fPart")
                 .build();
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)

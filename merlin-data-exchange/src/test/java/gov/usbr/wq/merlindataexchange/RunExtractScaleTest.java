@@ -1,8 +1,8 @@
 package gov.usbr.wq.merlindataexchange;
 
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParametersBuilder;
 import hec.io.impl.StoreOptionImpl;
 
 import java.io.File;
@@ -71,7 +71,7 @@ final class RunExtractScaleTest {
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory.resolve("" + process))
                 .withLogFileDirectory(testDirectory.resolve("" + process))
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()

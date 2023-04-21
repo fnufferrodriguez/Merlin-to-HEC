@@ -1,13 +1,13 @@
 package gov.usbr.wq.merlindataexchange.integration;
 
 import gov.usbr.wq.merlindataexchange.DataExchangeEngine;
-import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeEngineBuilder;
+import gov.usbr.wq.merlindataexchange.MerlinDataExchangeStatus;
 import gov.usbr.wq.merlindataexchange.ResourceAccess;
 import gov.usbr.wq.merlindataexchange.TestLogProgressListener;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParametersBuilder;
 import hec.io.impl.StoreOptionImpl;
 import org.junit.jupiter.api.Test;
 
@@ -22,23 +22,23 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-final class MerlinDataExchangeIntegrationTest
+final class MerlinDataExchangeProfileIntegrationTest
 {
     @Test
     void testRunExtract() throws IOException
     {
         String username = ResourceAccess.getUsername();
         char[] password = ResourceAccess.getPassword();
-        String mockXmlFileName = "merlin_mock_config_dx.xml";
+        String mockXmlFileName = "merlin_mock_config_profile.xml";
         Path mockXml = getMockXml(mockXmlFileName);
         List<Path> mocks = Collections.singletonList(mockXml);
         Path testDirectory = getTestDirectory();
         Instant start = Instant.parse("2016-02-01T12:00:00Z");
-        Instant end = Instant.parse("2016-02-21T12:00:00Z");
+        Instant end = Instant.parse("2017-02-21T12:00:00Z");
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters parameters = new MerlinParametersBuilder()
+        MerlinProfileParameters parameters = new MerlinProfileParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -46,10 +46,8 @@ final class MerlinDataExchangeIntegrationTest
                         .setUsername(username)
                         .andPassword(password)
                         .build())
-                .withStoreOption(storeOption)
                 .withStart(start)
                 .withEnd(end)
-                .withFPartOverride("fPart")
                 .build();
         DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
                 .withConfigurationFiles(mocks)

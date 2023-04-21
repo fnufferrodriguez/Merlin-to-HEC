@@ -23,9 +23,10 @@ public final class DataExchangeIO
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> CompletableFuture<Void> exchangeData(DataExchangeReader<?> reader, DataExchangeWriter<T> writer, DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters,
-                                                       DataStore source, DataStore destination, DataExchangeCache cache, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
-                                                       ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService)
+    public static <P extends MerlinParameters, T> CompletableFuture<Void> exchangeData(DataExchangeReader<P, ?> reader, DataExchangeWriter<P,T> writer, DataExchangeSet dataExchangeSet,
+                                                       P runtimeParameters, DataStore source, DataStore destination, DataExchangeCache cache, MeasureWrapper measure,
+                                                       MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
+                                                       AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService)
     {
         Instant readStart = Instant.now();
         CompletableFuture<Void> retVal = new CompletableFuture<>();

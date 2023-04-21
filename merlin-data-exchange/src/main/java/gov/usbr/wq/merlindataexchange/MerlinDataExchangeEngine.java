@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public final class MerlinDataExchangeEngine extends MerlinEngine implements DataExchangeEngine
+public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends MerlinEngine implements DataExchangeEngine
 {
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeEngine.class.getName());
     private static final int PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP = 5;
@@ -55,14 +55,14 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
     private final MerlinTimeSeriesDataAccess _merlinDataAccess = new MerlinTimeSeriesDataAccess();
     private final AtomicBoolean _isCancelled = new AtomicBoolean(false);
     private final List<Path> _configurationFiles;
-    private final MerlinParameters _runtimeParameters;
+    private final P _runtimeParameters;
     private final ProgressListener _progressListener;
     private final MerlinExchangeCompletionTracker _completionTracker = new MerlinExchangeCompletionTracker(PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP);
     private final Map<Path, MerlinDataExchangeLogger> _fileLoggers = new HashMap<>();
     private CompletableFuture<MerlinDataExchangeStatus> _extractFuture;
     private Instant _extractStart;
 
-    MerlinDataExchangeEngine(List<Path> configurationFiles, MerlinParameters runtimeParameters, ProgressListener progressListener)
+    MerlinDataExchangeEngine(List<Path> configurationFiles, P runtimeParameters, ProgressListener progressListener)
     {
         _configurationFiles = configurationFiles;
         _runtimeParameters = runtimeParameters;
@@ -121,27 +121,23 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
             logImportantProgress(timeWindowMsg);
             Path watershedDirectory = _runtimeParameters.getWatershedDirectory();
             Path logFileDirectory = _runtimeParameters.getLogFileDirectory();
-            int regularStoreRule = _runtimeParameters.getStoreOption().getRegular();
-            String fPartOverride = _runtimeParameters.getFPartOverride();
             List<AuthenticationParameters> authParams = _runtimeParameters.getAuthenticationParameters();
             String studyDirMsg = "Study directory: " + watershedDirectory.toString();
             String logFileFirMsg = "Log file directory: " + logFileDirectory.toString();
-            String storeRuleMsg = "Regular store rule: " + regularStoreRule;
-            String fPartOverrideMsg = "DSS f-part override: " + (fPartOverride == null ? "Not Overridden" : fPartOverride);
+
             setUpLoggingForConfigs(_configurationFiles, _runtimeParameters.getLogFileDirectory());
-            _fileLoggers.values().forEach(logger ->
+            for (MerlinDataExchangeLogger merlinDataExchangeLogger : _fileLoggers.values())
             {
-                logger.logToHeader(performedOnMsg);
-                logger.logToHeader(timeWindowMsg);
-                logger.logToHeader(studyDirMsg);
-                logger.logToHeader(logFileFirMsg);
-                logger.logToHeader(storeRuleMsg);
-                logger.logToHeader(fPartOverrideMsg);
-                for(AuthenticationParameters authParam : authParams)
+                merlinDataExchangeLogger.logToHeader(performedOnMsg);
+                merlinDataExchangeLogger.logToHeader(timeWindowMsg);
+                merlinDataExchangeLogger.logToHeader(studyDirMsg);
+                merlinDataExchangeLogger.logToHeader(logFileFirMsg);
+                _runtimeParameters.logAdditionalParameters(merlinDataExchangeLogger);
+                for (AuthenticationParameters authParam : authParams)
                 {
-                    logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsername());
+                    merlinDataExchangeLogger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsername());
                 }
-            });
+            }
             MerlinDataExchangeStatus retVal = MerlinDataExchangeStatus.FAILURE;
             try
             {
@@ -394,13 +390,14 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void exchangeData(DataExchangeSet dataExchangeSet, DataStore dataStoreSource, DataStore dataStoreDestination, MerlinDataExchangeLogBody logBody)
     {
         try
         {
             TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreSource);
-            DataExchangeReader<?> reader = DataExchangeReaderFactory.lookupReader(dataStoreSource, dataExchangeSet);
-            DataExchangeWriter<?> writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination, dataExchangeSet);
+            DataExchangeReader<P,?> reader = (DataExchangeReader<P, ?>) DataExchangeReaderFactory.lookupReader(dataStoreSource, dataExchangeSet);
+            DataExchangeWriter<P,?> writer = (DataExchangeWriter<P, ?>) DataExchangeWriterFactory.lookupWriter(dataStoreDestination, dataExchangeSet);
             String sourcePath = dataStoreSource.getPath(); //for merlin this is a URL
             DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
             if(cache != null)

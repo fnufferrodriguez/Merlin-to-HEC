@@ -12,6 +12,7 @@ import gov.usbr.wq.merlindataexchange.NoEventsException;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
 import hec.data.DataSetIllegalArgumentException;
 import hec.heclib.dss.HecTimeSeriesBase;
 import hec.heclib.util.HecTime;
@@ -34,18 +35,19 @@ import static java.util.stream.Collectors.toList;
 
 @ServiceProvider(service = DataExchangeReader.class, position = 100, path = DataExchangeReader.LOOKUP_PATH
         + "/" + MerlinDataExchangeReader.MERLIN + "/" + MerlinDataExchangeTimeSeriesReader.TIMESERIES)
-public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchangeReader<DataWrapper, TimeSeriesContainer>
+public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchangeReader<MerlinTimeSeriesParameters, DataWrapper, TimeSeriesContainer>
 {
     private static final String MERLIN_TIME_SERIES_TYPE = "Auto";
     public static final String TIMESERIES = "time-series"; //this corresponds to data-type in set we are reading for
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeTimeSeriesReader.class.getName());
 
     @Override
-    protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, String fPartOverride,
+    protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, MerlinTimeSeriesParameters parameters,
                                                 ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
                                                 MerlinExchangeCompletionTracker completionTracker, Boolean isProcessed, Instant start, Instant end, AtomicReference<String> readDurationString)
     {
         TimeSeriesContainer retVal = null;
+        String fPartOverride = parameters.getFPartOverride();
         try
         {
             retVal =  MerlinDataConverter.dataToTimeSeries(data, unitSystemToConvertTo, fPartOverride, isProcessed, progressListener);
