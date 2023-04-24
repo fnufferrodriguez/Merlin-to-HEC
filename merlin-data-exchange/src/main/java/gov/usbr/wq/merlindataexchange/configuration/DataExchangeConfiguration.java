@@ -10,11 +10,14 @@ import java.util.Optional;
 @JacksonXmlRootElement(namespace = "https://www.w3.org/2001/XMLSchema-instance", localName = "data-exchange-configuration")
 public final class DataExchangeConfiguration
 {
-    @JacksonXmlProperty(localName = "datastore")
+    public static final String DATASTORE_ELEM = "datastore";
+    public static final String DATASTORE_PROFILE_ELEM = "datastore-profile";
+    public static final String DATA_EXCHANGE_SET_ELEM = "data-exchange-set";
+    @JacksonXmlProperty(localName = DATASTORE_ELEM)
     private final List<DataStore> _dataStores = new ArrayList<>();
-    @JacksonXmlProperty(localName = "datastore-profile")
+    @JacksonXmlProperty(localName = DATASTORE_PROFILE_ELEM)
     private final List<DataStoreProfile> _dataStoreProfiles = new ArrayList<>();
-    @JacksonXmlProperty(localName = "data-exchange-set")
+    @JacksonXmlProperty(localName = DATA_EXCHANGE_SET_ELEM)
     private final List<DataExchangeSet> _dataExchangeSet = new ArrayList<>();
 
     public List<DataStore> getDataStores()
@@ -23,11 +26,6 @@ public final class DataExchangeConfiguration
         dataStores.addAll(_dataStores);
         dataStores.addAll(_dataStoreProfiles);
         return dataStores;
-    }
-
-    List<DataStoreProfile> getDataStoreProfiles()
-    {
-        return new ArrayList<>(_dataStoreProfiles);
     }
 
     void setDataStoreProfiles(List<DataStoreProfile> dataStoreProfiles)
