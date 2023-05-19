@@ -17,8 +17,8 @@ final class ProfileDataConverterTest
     void testProfileSampleSplitCelsius()
     {
         List<ProfileConstituent> profileConstituentList = new ArrayList<>();
-        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), "ft");
-        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), "C");
+        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), new ArrayList<>(), "ft");
+        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), new ArrayList<>(), "C");
         profileConstituentList.add(depthConstituent);
         profileConstituentList.add(tempConstituent);
         List<ZonedDateTime> readDateTimes = Arrays.asList(ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME),
@@ -57,8 +57,8 @@ final class ProfileDataConverterTest
     void testProfileSampleSplitFahrenheit()
     {
         List<ProfileConstituent> profileConstituentList = new ArrayList<>();
-        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), "ft");
-        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), "F");
+        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), new ArrayList<>(), "ft");
+        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), new ArrayList<>(), "F");
         profileConstituentList.add(depthConstituent);
         profileConstituentList.add(tempConstituent);
         List<ZonedDateTime> readDateTimes = Arrays.asList(ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME),
@@ -97,8 +97,8 @@ final class ProfileDataConverterTest
     void testProfileSampleSplitKelvin()
     {
         List<ProfileConstituent> profileConstituentList = new ArrayList<>();
-        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), "ft");
-        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), "K");
+        ProfileConstituent depthConstituent = new ProfileConstituent("Depth", Arrays.asList(0.1,5.0,10.0,15.0,0.1,5.1,10.1,15.1), new ArrayList<>(), "ft");
+        ProfileConstituent tempConstituent = new ProfileConstituent("Temp-Water", Arrays.asList(10.0,11.0,12.0,13.0,10.0,9.0,8.0,7.0), new ArrayList<>(), "K");
         profileConstituentList.add(depthConstituent);
         profileConstituentList.add(tempConstituent);
         List<ZonedDateTime> readDateTimes = Arrays.asList(ZonedDateTime.parse("2009-09-15T10:06:00-08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME),

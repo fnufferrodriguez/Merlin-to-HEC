@@ -170,7 +170,7 @@ final class CsvProfileObjectMapper extends CsvMapper
                         Double value = mapping.getHeaderToValuesMap().get(header);
                         valuesForColumn.add(value);
                     }
-                    ProfileConstituent constituentData = new ProfileConstituent(param, valuesForColumn, unit);
+                    ProfileConstituent constituentData = new ProfileConstituent(param, valuesForColumn, new ArrayList<>(), unit);
                     constituentDataList.add(constituentData);
                 }
             }
@@ -192,6 +192,7 @@ final class CsvProfileObjectMapper extends CsvMapper
         {
             retVal.add(profileConstituent.getParameter() + "(" + profileConstituent.getUnit() + ")");
         }
+        //retVal.add("Real Date"); -> Can add this in as an optional -D in future
         return retVal;
     }
 
@@ -217,6 +218,7 @@ final class CsvProfileObjectMapper extends CsvMapper
                     String unit = data.getUnit();
                     String parameterName = data.getParameter();
                     csvRow.setParameterValue(parameterName + "(" + unit + ")", value);
+                    //csvRow.setRealDate(data.getDateValues().get(i)); -> Can add this in as an optional -D in future
                 }
             }
             retVal.addAll(rowsForSample);

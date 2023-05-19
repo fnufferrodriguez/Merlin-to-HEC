@@ -9,6 +9,7 @@ final class CsvProfileRow
 {
     private ZonedDateTime _date;
     private final CsvDataMapping _mapping = new CsvDataMapping();
+    private ZonedDateTime _realDate;
 
     public ZonedDateTime getDate()
     {
@@ -18,6 +19,16 @@ final class CsvProfileRow
     public void setDate(ZonedDateTime date)
     {
         _date = date;
+    }
+
+    public ZonedDateTime getRealDate()
+    {
+        return _realDate;
+    }
+
+    public void setRealDate(ZonedDateTime realDate)
+    {
+        _realDate = realDate;
     }
 
     public CsvDataMapping getMapping()

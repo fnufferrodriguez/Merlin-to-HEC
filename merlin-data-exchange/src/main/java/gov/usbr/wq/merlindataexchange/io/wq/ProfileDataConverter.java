@@ -5,7 +5,6 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,11 +36,14 @@ final class ProfileDataConverter
         for(ProfileConstituent constituent : constituents)
         {
             List<List<Double>> separatedValuesList = separateValues(constituent.getDataValues(), dateTimeGroups);
+            List<List<ZonedDateTime>> separatedZonedDateTimesList = separateDateTimes(constituent.getDateValues(), dateTimeGroups);
             List<ProfileConstituent> profileConstituentSubGroups = new ArrayList<>();
+            int i=0;
             for(List<Double> valuesGroup : separatedValuesList)
             {
-                ProfileConstituent profileConstituentSubGroup = new ProfileConstituent(constituent.getParameter(), valuesGroup, constituent.getUnit());
+                ProfileConstituent profileConstituentSubGroup = new ProfileConstituent(constituent.getParameter(), valuesGroup, separatedZonedDateTimesList.get(i), constituent.getUnit());
                 profileConstituentSubGroups.add(profileConstituentSubGroup);
+                i++;
             }
             separatedProfileConstituents.add(profileConstituentSubGroups);
         }
@@ -80,6 +82,24 @@ final class ProfileDataConverter
             for (int i = 0; i < groupSize; i++)
             {
                 sublist.add(values.get(index));
+                index++;
+            }
+            result.add(sublist);
+        }
+        return result;
+    }
+
+    private static List<List<ZonedDateTime>> separateDateTimes(List<ZonedDateTime> dates, List<List<ZonedDateTime>> dateTimeGroups)
+    {
+        List<List<ZonedDateTime>> result = new ArrayList<>();
+        int index = 0;
+        for (List<ZonedDateTime> dateTimeGroup : dateTimeGroups)
+        {
+            int groupSize = dateTimeGroup.size();
+            List<ZonedDateTime> sublist = new ArrayList<>();
+            for (int i = 0; i < groupSize; i++)
+            {
+                sublist.add(dates.get(index));
                 index++;
             }
             result.add(sublist);

@@ -4,6 +4,7 @@ import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,17 @@ public final class DataExchangeCache
     private final Set<TemplateWrapper> _cachedTemplates = new HashSet<>();
     private final Set<QualityVersionWrapper> _cachedQualityVersions = new HashSet<>();
     private final Map<TemplateWrapper, List<MeasureWrapper>> _cachedTemplateToMeasures = new HashMap<>();
+    private ZoneId _zoneId;
+
+    public ZoneId getZoneId()
+    {
+        return _zoneId;
+    }
+
+    public void setZoneId(ZoneId zoneId)
+    {
+        _zoneId = zoneId;
+    }
 
     public List<TemplateWrapper> getCachedTemplates()
     {

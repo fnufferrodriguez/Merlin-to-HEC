@@ -12,6 +12,12 @@ final class MerlinInitializationException extends Exception
         super(getMessageFromHttpAccessException("Failed to initialize templates, quality versions, and measures", e, connectionInfo), e);
     }
 
+    MerlinInitializationException(ApiConnectionInfo connectionInfo, String error)
+    {
+        super("Failed to initialize templates, quality versions, and measures for URL: " + connectionInfo.getApiRoot() +
+                "\n" + error);
+    }
+
     private static String getMessageFromHttpAccessException(String errorMsg, Exception e, ApiConnectionInfo connectionInfo)
     {
         if (e instanceof HttpAccessException)

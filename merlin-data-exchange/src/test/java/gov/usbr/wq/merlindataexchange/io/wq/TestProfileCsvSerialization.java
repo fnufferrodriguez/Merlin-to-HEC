@@ -35,8 +35,8 @@ final class TestProfileCsvSerialization
         String tempUnits = "C";
         String depthUnits = "ft";
         List<ProfileConstituent> profileConstituentData = new ArrayList<>();
-        profileConstituentData.add(new ProfileConstituent("Depth", depths, depthUnits));
-        profileConstituentData.add(new ProfileConstituent("Temp-Water", temps, tempUnits));
+        profileConstituentData.add(new ProfileConstituent("Depth", depths, new ArrayList<>(), depthUnits));
+        profileConstituentData.add(new ProfileConstituent("Temp-Water", temps, new ArrayList<>(), tempUnits));
         ProfileSample sample = new ProfileSample(dateTime, profileConstituentData);
         SortedSet<ProfileSample> samples = new TreeSet<>(Comparator.comparing(ProfileSample::getDateTime));
         samples.add(sample);

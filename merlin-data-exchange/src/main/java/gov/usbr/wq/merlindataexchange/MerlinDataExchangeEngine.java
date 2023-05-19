@@ -5,12 +5,14 @@ import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
 import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.HttpAccessUtils;
 import gov.usbr.wq.dataaccess.http.TokenContainer;
+import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeIO;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeLookupException;
@@ -542,7 +544,7 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
     }
 
     private void initializeCacheForMerlinWithToken(Map<Path, DataExchangeConfiguration> parsedConfigurations, ApiConnectionInfo connectionInfo, TokenContainer token)
-            throws IOException, HttpAccessException
+            throws IOException, HttpAccessException, MerlinInitializationException
     {
 
         DataExchangeCache cache = _dataExchangeCache.get(connectionInfo);
@@ -564,6 +566,23 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
         else
         {
             initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, connectionInfo, token);
+        }
+        for(Map.Entry<TemplateWrapper, List<MeasureWrapper>> entry : cache.getCachedTemplateToMeasures().entrySet())
+        {
+            List<MeasureWrapper> measures = entry.getValue();
+            int depthCount = 0;
+            for(MeasureWrapper measure : measures)
+            {
+                if(DataStoreProfile.DEPTH.equalsIgnoreCase(measure.getParameter()))
+                {
+                    depthCount++;
+                }
+                if(depthCount > 1)
+                {
+                    throw new MerlinInitializationException(connectionInfo,
+                            "Template " + entry.getKey().getName() + " has multiple profiles. Data Exchange does not currently support multiple profiles in a single template");
+                }
+            }
         }
     }
 
@@ -592,6 +611,14 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
                     else
                     {
                         measures = cache.getCachedTemplateToMeasures().get(template);
+                    }
+                    if(cache.getZoneId() == null && !measures.isEmpty())
+                    {
+                        MeasureWrapper measure = measures.get(0);
+                        QualityVersionWrapper qv = cache.getCachedQualityVersions().get(0);
+                        DataWrapper data = _merlinDataAccess.getEventsBySeries(connectionInfo, token, measure, qv.getQualityVersionID(),
+                                measure.getStart().toInstant(), measure.getStart().toInstant());
+                        cache.setZoneId(data.getTimeZone());
                     }
                     _completionTracker.addNumberOfMeasuresToComplete(measures.size());
                 }

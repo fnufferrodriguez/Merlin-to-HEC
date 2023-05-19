@@ -28,9 +28,7 @@ import rma.services.annotations.ServiceProvider;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,7 +72,9 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
                     }
                     List<Double> dataValues = dataWrapper.getEvents().stream().map(EventWrapper::getValue)
                             .collect(toList());
-                    ProfileConstituent profileConstituent = buildProfileConstituentData(dataValues, unitSystemToConvertTo, dataWrapper, dataStore);
+                    List<ZonedDateTime> dateValues = dataWrapper.getEvents().stream().map(EventWrapper::getDate)
+                            .collect(toList());
+                    ProfileConstituent profileConstituent = buildProfileConstituentData(dataValues, dateValues, unitSystemToConvertTo, dataWrapper, dataStore);
                     profileConstituents.add(profileConstituent);
                 }
                 List<ZonedDateTime> readingDateTimes = dataWrappers.get(0).getEvents()
@@ -95,7 +95,7 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         return retVal;
     }
 
-    private ProfileConstituent buildProfileConstituentData(List<Double> dataValues, String unitSystemToConvertTo, DataWrapper dataWrapper, DataStore dataStore) throws UnitsConversionException
+    private ProfileConstituent buildProfileConstituentData(List<Double> dataValues, List<ZonedDateTime> dateValues, String unitSystemToConvertTo, DataWrapper dataWrapper, DataStore dataStore) throws UnitsConversionException
     {
         Constituent constituent = ((DataStoreProfile) dataStore).getConstituentByParameter(dataWrapper.getParameter());
         int convertToUnitSystemId = getUnitSystemIdForUnitSystem(unitSystemToConvertTo);
@@ -106,18 +106,17 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         {
             constituentUnit = constituent.getUnit();
         }
-        Parameter param = Parameter.getParameterForUnitsString(unitToConvertTo);
-        unitFromTemplateUnitSystem = Parameter.getUnitsStringForSystem(param.getParameterId(), convertToUnitSystemId);
+        unitFromTemplateUnitSystem = Parameter.getUnitsStringForSystem(dataWrapper.getParameter(), convertToUnitSystemId);
         if(constituentUnit != null)
         {
             unitToConvertTo = constituentUnit;
         }
-        else if(unitFromTemplateUnitSystem != null)
+        else if(!Units.UNDEFINED_UNITS.equalsIgnoreCase(unitFromTemplateUnitSystem))
         {
             unitToConvertTo = unitFromTemplateUnitSystem;
         }
         dataValues = convertUnits(dataValues, dataWrapper.getUnits(), unitToConvertTo);
-        return new ProfileConstituent(dataWrapper.getParameter(), dataValues, unitToConvertTo);
+        return new ProfileConstituent(dataWrapper.getParameter(), dataValues, dateValues, unitToConvertTo);
     }
 
     private int getUnitSystemIdForUnitSystem(String unitSystemToConvertTo)
@@ -203,8 +202,8 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         {
             try
             {
-                start = getStartOfYearInstant(start);
-                end = getEndOfYearInstant(end);
+                start = getStartOfYearInstant(start, cache.getZoneId());
+                end = getEndOfYearInstant(end, cache.getZoneId());
                 List<MeasureWrapper> measureWrappers = getMeasuresListForDepthMeasure(depthMeasure, dataExchangeSet, cache);
                 Duration significantTimeChange = ProfileDataConverter.getSignificantTimeChange();
                 long maxTimeJumpBeforeConsideredSignificantChange = significantTimeChange.toMinutes() - 1;
@@ -250,19 +249,21 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         }
     }
 
-    private Instant getStartOfYearInstant(Instant instant)
+    private Instant getStartOfYearInstant(Instant instant, ZoneId zoneId)
     {
-        LocalDate localDate = LocalDate.from(instant.atZone(ZoneOffset.UTC));
-        LocalDate startOfYear = localDate.withDayOfYear(1);
-        LocalDateTime startOfYearLocalDateTime = startOfYear.atStartOfDay().minus(ProfileDataConverter.getSignificantTimeChange());
-        return startOfYearLocalDateTime.toInstant(ZoneOffset.UTC);
+        ZonedDateTime zonedDateTime = instant.atZone(zoneId);
+        int year = zonedDateTime.getYear();
+        ZonedDateTime startOfYear = ZonedDateTime.of(year, 1, 1, 0, 0, 0, 0, zoneId);
+        startOfYear = startOfYear.minus(ProfileDataConverter.getSignificantTimeChange());
+        return startOfYear.toInstant();
     }
-    private Instant getEndOfYearInstant(Instant instant)
+    private Instant getEndOfYearInstant(Instant instant, ZoneId zoneId)
     {
-        LocalDate localDate = LocalDate.from(instant.atZone(ZoneOffset.UTC));
-        LocalDate startOfNextYear = localDate.withDayOfYear(1).plusYears(1);
-        LocalDateTime endOfYearLocalDateTime = startOfNextYear.atStartOfDay().plus(ProfileDataConverter.getSignificantTimeChange());
-        return endOfYearLocalDateTime.toInstant(ZoneOffset.UTC);
+        ZonedDateTime zonedDateTime = instant.atZone(zoneId);
+        int year = zonedDateTime.getYear();
+        ZonedDateTime startOfYear = ZonedDateTime.of(year+1, 1, 1, 0, 0, 0, 0, zoneId);
+        startOfYear = startOfYear.plus(ProfileDataConverter.getSignificantTimeChange());
+        return startOfYear.toInstant();
     }
 
     private void determineRemovalOfLast(EventWrapper originalEndEvent, Instant end, List<EventWrapper> events, Double min, Double max, MerlinProfileDataWrappers retVal)
