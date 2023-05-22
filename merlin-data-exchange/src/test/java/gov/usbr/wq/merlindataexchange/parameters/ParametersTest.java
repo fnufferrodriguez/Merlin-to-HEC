@@ -43,7 +43,7 @@ final class ParametersTest
     }
 
     @Test
-    void testBuildMerlinParameters() throws UsernamePasswordNotFoundException {
+    void testBuildMerlinTimeSeriesParameters() throws UsernamePasswordNotFoundException {
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
         Instant end = Instant.parse("2022-08-30T08:00:00Z");
@@ -56,7 +56,7 @@ final class ParametersTest
                 .andPassword("password".toCharArray())
                 .build();
         Path logDir = workingDir.resolve("log");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParameters(authParams)
@@ -78,6 +78,34 @@ final class ParametersTest
     }
 
     @Test
+    void testBuildMerlinProfileParameters() throws UsernamePasswordNotFoundException {
+        Path workingDir = Paths.get(System.getProperty("user.dir"));
+        Instant start = Instant.parse("2019-01-01T08:00:00Z");
+        Instant end = Instant.parse("2022-08-30T08:00:00Z");
+        AuthenticationParameters authParams = new AuthenticationParametersBuilder()
+                .forUrl("https://www.grabdata2.com")
+                .setUsername("user")
+                .andPassword("password".toCharArray())
+                .build();
+        Path logDir = workingDir.resolve("log");
+        MerlinProfileParameters params = new MerlinProfileParametersBuilder()
+                .withWatershedDirectory(workingDir)
+                .withLogFileDirectory(logDir)
+                .withAuthenticationParameters(authParams)
+                .withStart(start)
+                .withEnd(end)
+                .build();
+        assertEquals(params.getWatershedDirectory(), workingDir);
+        assertEquals(params.getLogFileDirectory(), logDir);
+        assertEquals(params.getStart(), start);
+        assertEquals(params.getEnd(), end);
+        UsernamePasswordHolder usernamePassword = params.getUsernamePasswordForUrl("https://www.grabdata2.com");
+        assertEquals("user", usernamePassword.getUsername());
+        assertEquals("password", new String(usernamePassword.getPassword()));
+        assertThrows(UsernamePasswordNotFoundException.class, () -> params.getUsernamePasswordForUrl("bleh"));
+    }
+
+    @Test
     void testGetAuthParameters() throws UsernamePasswordNotFoundException
     {
         Path workingDir = Paths.get(System.getProperty("user.dir"));
@@ -91,7 +119,7 @@ final class ParametersTest
                 .setUsername("user")
                 .andPassword("password".toCharArray())
                 .build();
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(workingDir)
                 .withAuthenticationParameters(authParams)
@@ -121,7 +149,7 @@ final class ParametersTest
                 .andPassword("password".toCharArray())
                 .build();
         Path logDir = workingDir.resolve("log");
-        assertThrows(NullPointerException.class, () -> new MerlinParametersBuilder()
+        assertThrows(NullPointerException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(null)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParameters(authParams)
@@ -130,7 +158,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build());
-        assertThrows(NullPointerException.class, () -> new MerlinParametersBuilder()
+        assertThrows(NullPointerException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(null)
                 .withAuthenticationParameters(authParams)
@@ -139,7 +167,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build());
-        assertThrows(IllegalArgumentException.class, () -> new MerlinParametersBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParameters(null)
@@ -148,7 +176,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build());
-        assertThrows(IllegalArgumentException.class, () -> new MerlinParametersBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParametersList(null)
@@ -157,7 +185,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build());
-        assertThrows(IllegalArgumentException.class, () -> new MerlinParametersBuilder()
+        assertThrows(IllegalArgumentException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParametersList(new ArrayList<>())
@@ -166,7 +194,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build());
-        assertThrows(NullPointerException.class, () -> new MerlinParametersBuilder()
+        assertThrows(NullPointerException.class, () -> new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParameters(authParams)
@@ -178,7 +206,7 @@ final class ParametersTest
     }
 
     @Test
-    void testBuildFromMerlinParameters() throws UsernamePasswordNotFoundException
+    void testBuildFromMerlinTimeSeriesParameters() throws UsernamePasswordNotFoundException
     {
         Path workingDir = Paths.get(System.getProperty("user.dir"));
         Instant start = Instant.parse("2019-01-01T08:00:00Z");
@@ -192,7 +220,7 @@ final class ParametersTest
                 .andPassword("password".toCharArray())
                 .build();
         Path logDir = workingDir.resolve("log");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(workingDir)
                 .withLogFileDirectory(logDir)
                 .withAuthenticationParameters(authParams)
@@ -201,7 +229,7 @@ final class ParametersTest
                 .withEnd(end)
                 .withFPartOverride("fPart")
                 .build();
-        params = new MerlinParametersBuilder()
+        params = new MerlinTimeSeriesParametersBuilder()
                 .fromExistingParameters(params)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
                         .forUrl("https://www.grabdata2.com")
@@ -219,7 +247,7 @@ final class ParametersTest
         assertEquals("userNew", usernamePassword.getUsername());
         assertEquals("passwordNew", new String(usernamePassword.getPassword()));
 
-        params = new MerlinParametersBuilder()
+        params = new MerlinTimeSeriesParametersBuilder()
                 .fromExistingParameters(params)
                 .build();
         assertEquals(params.getWatershedDirectory(), workingDir);
@@ -233,7 +261,7 @@ final class ParametersTest
         assertEquals("passwordNew", new String(usernamePassword.getPassword()));
 
         storeOption.setRegular("1-replace-missing-values-only");
-        params = new MerlinParametersBuilder()
+        params = new MerlinTimeSeriesParametersBuilder()
                 .fromExistingParameters(params)
                 .withWatershedDirectory(workingDir.resolve("changed"))
                 .withLogFileDirectory(workingDir.resolve("changedLog"))

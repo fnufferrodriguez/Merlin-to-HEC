@@ -5,7 +5,12 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
+import gov.usbr.wq.merlindataexchange.io.DssDataExchangeWriter;
+import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeTimeSeriesReader;
+import gov.usbr.wq.merlindataexchange.io.wq.CsvProfileWriter;
+import gov.usbr.wq.merlindataexchange.io.wq.MerlinDataExchangeProfileReader;
 import hec.heclib.util.Unit;
 import org.xml.sax.SAXException;
 
@@ -15,14 +20,23 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class MerlinDataExchangeParser
 {
+
+    private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeParser.class.getName());
     private MerlinDataExchangeParser()
     {
         throw new AssertionError("Utility class for parsing. Do not instantiate.");
@@ -33,6 +47,9 @@ public final class MerlinDataExchangeParser
         try
         {
             validateConfigIsXml(configFilepath);
+            int numberOfDataStores = countNumberOfElements(configFilepath, DataExchangeConfiguration.DATASTORE_ELEM);
+            int numberOfProfileDataStores = countNumberOfElements(configFilepath, DataExchangeConfiguration.DATASTORE_PROFILE_ELEM);
+            int numberOfSets = countNumberOfElements(configFilepath, DataExchangeConfiguration.DATA_EXCHANGE_SET_ELEM);
             XMLInputFactory factory = XMLInputFactory.newFactory();
             XMLStreamReader streamReader = factory.createXMLStreamReader(Files.newInputStream(configFilepath));
             JacksonXmlModule module = new JacksonXmlModule();
@@ -40,13 +57,29 @@ public final class MerlinDataExchangeParser
             XmlMapper xmlMapper = new XmlMapper(module);
             streamReader.next(); // to point to <root>
             DataExchangeConfiguration retVal = xmlMapper.readValue(streamReader, DataExchangeConfiguration.class);
-            if(retVal.getDataExchangeSets() == null)
+            if(retVal.getDataExchangeSets().isEmpty())
             {
                 throw new MerlinConfigParseException(configFilepath, "Missing data exchange set(s)");
             }
-            if(retVal.getDataStores() == null)
+            if(retVal.getDataStores().isEmpty())
             {
                 throw new MerlinConfigParseException(configFilepath, "Missing data stores");
+            }
+            int deserializedNumOfProfileDataStores = (int) retVal.getDataStores().stream().filter(DataStoreProfile.class::isInstance)
+                    .count();
+            int deserializedNumOfNonProfileDataStores = (int) retVal.getDataStores().stream().filter(ds -> !(ds instanceof DataStoreProfile))
+                    .count();
+            if(numberOfDataStores > deserializedNumOfNonProfileDataStores)
+            {
+                throw new MerlinConfigParseException(configFilepath, "All datastore(s) must be grouped together in a continuous list.");
+            }
+            if(numberOfProfileDataStores > deserializedNumOfProfileDataStores)
+            {
+                throw new MerlinConfigParseException(configFilepath, "All datastore-profile(s) must be grouped together in a continuous list.");
+            }
+            if(numberOfSets > retVal.getDataExchangeSets().size())
+            {
+                throw new MerlinConfigParseException(configFilepath, "All data exchange set(s) must be grouped together in a continuous list.");
             }
             validateParsedConfig(configFilepath, retVal);
             return retVal;
@@ -57,12 +90,34 @@ public final class MerlinDataExchangeParser
         }
     }
 
+    private static int countNumberOfElements(Path configFilepath, String... elemNames)
+    {
+        int count = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(configFilepath.toString())))
+        {
+            String line;
+            while ((line = br.readLine()) != null)
+            {
+                for(String elemName : elemNames)
+                {
+                    String datastoreElem = "<" + elemName + " ";
+                    count += line.split(datastoreElem, -1).length - 1;
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            LOGGER.log(Level.CONFIG, e, () -> "Failed to read " + configFilepath);
+        }
+        return count;
+    }
+
     private static void validateParsedConfig(Path configFilepath, DataExchangeConfiguration config) throws MerlinConfigParseException
     {
         List<DataStore> dataStores = config.getDataStores();
         for(DataStore dataStore : dataStores)
         {
-            validateDataStore(configFilepath, dataStore);
+            dataStore.validate(configFilepath);
         }
         for (DataExchangeSet set : config.getDataExchangeSets())
         {
@@ -112,7 +167,33 @@ public final class MerlinDataExchangeParser
                     + " in data-exchange-set " + set.getId()));
             config.getDataStoreByRef(dataStoreRefA).orElseThrow(() -> new MerlinConfigParseException(configFilepath, "No data-store found for id: " + dataStoreRefB.getId()
                     + " in data-exchange-set " + set.getId()));
+            validateRefTypes(config, set, dataStoreRefA, dataStoreRefB, configFilepath);
 
+        }
+    }
+
+    private static void validateRefTypes(DataExchangeConfiguration config, DataExchangeSet set, DataStoreRef dataStoreRefA, DataStoreRef dataStoreRefB, Path configFilepath)
+            throws MerlinConfigParseException
+    {
+        DataStoreRef destRef = dataStoreRefA;
+        if(set.getSourceId().equalsIgnoreCase(dataStoreRefA.getId()))
+        {
+            destRef = dataStoreRefB;
+        }
+        Optional<DataStore> dataStoreOpt = config.getDataStoreByRef(destRef);
+        if(dataStoreOpt.isPresent())
+        {
+            DataStore dataStore = dataStoreOpt.get();
+            if(set.getDataType().equalsIgnoreCase(MerlinDataExchangeTimeSeriesReader.TIMESERIES)
+                    && !dataStore.getDataStoreType().equalsIgnoreCase(DssDataExchangeWriter.DSS))
+            {
+                throw new MerlinConfigInvalidTypesException(configFilepath, dataStore, MerlinDataExchangeTimeSeriesReader.TIMESERIES, Collections.singletonList(DssDataExchangeWriter.DSS));
+            }
+            if(set.getDataType().equalsIgnoreCase(MerlinDataExchangeProfileReader.PROFILE)
+                    && !dataStore.getDataStoreType().equalsIgnoreCase(CsvProfileWriter.CSV))
+            {
+                throw new MerlinConfigInvalidTypesException(configFilepath, dataStore, MerlinDataExchangeProfileReader.PROFILE, Collections.singletonList(CsvProfileWriter.CSV));
+            }
         }
     }
 
@@ -142,22 +223,6 @@ public final class MerlinDataExchangeParser
             }
         }
         return retVal;
-    }
-
-    private static void validateDataStore(Path configFilepath, DataStore dataStore) throws MerlinConfigParseException
-    {
-        if(dataStore.getId() == null || dataStore.getId().isEmpty())
-        {
-            throw new MerlinConfigParseException(configFilepath, "Missing id for datastore");
-        }
-        if(dataStore.getDataStoreType() == null || dataStore.getDataStoreType().trim().isEmpty())
-        {
-            throw new MerlinConfigParseException(configFilepath, "Missing data-type for datastore " + dataStore.getId());
-        }
-        if(dataStore.getPath() == null || dataStore.getPath().trim().isEmpty())
-        {
-            throw new MerlinConfigParseException(configFilepath, "Missing path for datastore " + dataStore.getId());
-        }
     }
 
     private static void validateConfigIsXml(Path configFilepath) throws IOException, SAXException, ParserConfigurationException

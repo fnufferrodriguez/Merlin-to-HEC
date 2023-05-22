@@ -22,20 +22,22 @@ public final class DataExchangeIO
         throw new AssertionError("Utility class for reading and writing data. Don't instantiate");
     }
 
-    public static CompletableFuture<Void> exchangeData(DataExchangeReader reader, DataExchangeWriter writer, DataExchangeSet dataExchangeSet, MerlinParameters runtimeParameters,
-                                                       DataStore source, DataStore destination, DataExchangeCache cache, MeasureWrapper measure, MerlinExchangeCompletionTracker completionTracker,
-                                                       ProgressListener progressListener, AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService)
+    @SuppressWarnings("unchecked")
+    public static <P extends MerlinParameters, T> CompletableFuture<Void> exchangeData(DataExchangeReader<P, ?> reader, DataExchangeWriter<P,T> writer, DataExchangeSet dataExchangeSet,
+                                                       P runtimeParameters, DataStore source, DataStore destination, DataExchangeCache cache, MeasureWrapper measure,
+                                                       MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener,
+                                                       AtomicBoolean isCancelled, MerlinDataExchangeLogBody logger, ExecutorService executorService)
     {
         Instant readStart = Instant.now();
         CompletableFuture<Void> retVal = new CompletableFuture<>();
         if(!isCancelled.get())
         {
             AtomicReference<String> readDurationString = new AtomicReference<>("");
-            retVal = reader.readData(dataExchangeSet, runtimeParameters, source, cache, measure,
+            retVal = reader.readData(dataExchangeSet, runtimeParameters, source, destination, cache, measure,
                             completionTracker, progressListener, isCancelled, logger, executorService, readDurationString)
-                    .thenAcceptAsync(tsc ->
+                    .thenAcceptAsync(objectRead ->
                     {
-                        writer.writeData(tsc, measure, runtimeParameters, destination, completionTracker, progressListener, logger, isCancelled, readDurationString);
+                        writer.writeData((T) objectRead, measure, dataExchangeSet, runtimeParameters, cache, destination, completionTracker, progressListener, logger, isCancelled, readDurationString);
                         Instant writeEnd = Instant.now();
                         String totalDuration = ReadWriteTimestampUtil.getDuration(readStart, writeEnd);
                         if(!totalDuration.isEmpty())

@@ -1,0 +1,22 @@
+@startuml
+
+class ProfileSample {
+    - dateTime: ZonedDateTime
+    - constituentData: List<ProfileConstituent>
+}
+
+class ProfileConstituent {
+    + data: List<Double>
+    + param: String
+    + unit: String
+}
+
+
+ProfileSample"1" --> "n"ProfileConstituent
+
+@enduml
+
+
+
+
+

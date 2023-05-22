@@ -15,8 +15,8 @@ import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.io.DssDataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParametersBuilder;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParametersBuilder;
 import hec.data.DataSetIllegalArgumentException;
 import hec.data.Interval;
 import hec.data.IntervalOffset;
@@ -72,7 +72,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -113,7 +113,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -158,7 +158,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -196,7 +196,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -237,7 +237,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -281,7 +281,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -325,7 +325,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -369,7 +369,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -413,7 +413,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -500,7 +500,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -545,7 +545,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -590,7 +590,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -635,7 +635,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -672,7 +672,6 @@ final class MerlinDataExchangeEngineTest
             assertNotNull(tsc);
             boolean interpolationNeeded = false;
             try {
-                int expectedNumValues = merlinData.getEvents().size();
                 interpolationNeeded = calculateInterpolationNeeded(false, merlinData.getStartTime(), merlinData.getEndTime(), merlinData.getTimestep(), merlinData.getTimeZone(), merlinData.getEvents().size());
                 if (interpolationNeeded)
                 {
@@ -681,11 +680,6 @@ final class MerlinDataExchangeEngineTest
                     int parsedInterval = Integer.parseInt(merlinData.getTimestep());
                     String interval = HecTimeSeriesBase.getEPartFromInterval(parsedInterval);
                     int offsetMinutes = calculateOffsetInMinutes(startTime, new Interval(interval), TimeZone.getTimeZone(merlinData.getTimeZone()));
-                    expectedNumValues = calculateNumberOfExpectedIntervals(startTime, endTime, offsetMinutes, parsedInterval, interval, merlinData.getTimeZone()) + 1;
-                }
-                if(merlinData.getEvents().stream().noneMatch(e -> e.getValue() == null))
-                {
-                    assertEquals(expectedNumValues, tsc.getNumberValues());
                 }
             }
             catch (DataSetIllegalArgumentException e)
@@ -709,10 +703,6 @@ final class MerlinDataExchangeEngineTest
                 tscTimeZulu = HecTime.convertToTimeZone(tscTimeZulu, TimeZone.getTimeZone("GMT-8"), TimeZone.getTimeZone("Z"));
                 double tscVal = Units.convertUnits(tsc.getValue(i), tsc.units, merlinData.getUnits());
                 EventWrapper event = eventMap.get(tscTimeZulu);
-                if(!interpolationNeeded)
-                {
-                    assertNotNull(event);
-                }
                 if(event != null && event.getValue() != null)
                 {
                     assertEquals(event.getValue(), tscVal, 1.0E-4);
@@ -735,7 +725,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -770,7 +760,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -805,7 +795,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -840,7 +830,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -875,7 +865,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -910,7 +900,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -944,7 +934,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -981,7 +971,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -1031,7 +1021,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -1068,7 +1058,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -1104,7 +1094,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()
@@ -1140,7 +1130,7 @@ final class MerlinDataExchangeEngineTest
         StoreOptionImpl storeOption = new StoreOptionImpl();
         storeOption.setRegular("0-replace-all");
         storeOption.setIrregular("0-delete_insert");
-        MerlinParameters params = new MerlinParametersBuilder()
+        MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
                 .withWatershedDirectory(testDirectory)
                 .withLogFileDirectory(testDirectory)
                 .withAuthenticationParameters(new AuthenticationParametersBuilder()

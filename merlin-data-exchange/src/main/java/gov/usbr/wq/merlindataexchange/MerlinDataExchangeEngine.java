@@ -5,12 +5,14 @@ import gov.usbr.wq.dataaccess.http.ApiConnectionInfo;
 import gov.usbr.wq.dataaccess.http.HttpAccessException;
 import gov.usbr.wq.dataaccess.http.HttpAccessUtils;
 import gov.usbr.wq.dataaccess.http.TokenContainer;
+import gov.usbr.wq.dataaccess.model.DataWrapper;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.dataaccess.model.QualityVersionWrapper;
 import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeIO;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeLookupException;
@@ -46,7 +48,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public final class MerlinDataExchangeEngine extends MerlinEngine implements DataExchangeEngine
+public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends MerlinEngine implements DataExchangeEngine
 {
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeEngine.class.getName());
     private static final int PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP = 5;
@@ -55,14 +57,14 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
     private final MerlinTimeSeriesDataAccess _merlinDataAccess = new MerlinTimeSeriesDataAccess();
     private final AtomicBoolean _isCancelled = new AtomicBoolean(false);
     private final List<Path> _configurationFiles;
-    private final MerlinParameters _runtimeParameters;
+    private final P _runtimeParameters;
     private final ProgressListener _progressListener;
     private final MerlinExchangeCompletionTracker _completionTracker = new MerlinExchangeCompletionTracker(PERCENT_COMPLETE_ALLOCATED_FOR_INITIAL_SETUP);
     private final Map<Path, MerlinDataExchangeLogger> _fileLoggers = new HashMap<>();
     private CompletableFuture<MerlinDataExchangeStatus> _extractFuture;
     private Instant _extractStart;
 
-    MerlinDataExchangeEngine(List<Path> configurationFiles, MerlinParameters runtimeParameters, ProgressListener progressListener)
+    MerlinDataExchangeEngine(List<Path> configurationFiles, P runtimeParameters, ProgressListener progressListener)
     {
         _configurationFiles = configurationFiles;
         _runtimeParameters = runtimeParameters;
@@ -121,27 +123,23 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
             logImportantProgress(timeWindowMsg);
             Path watershedDirectory = _runtimeParameters.getWatershedDirectory();
             Path logFileDirectory = _runtimeParameters.getLogFileDirectory();
-            int regularStoreRule = _runtimeParameters.getStoreOption().getRegular();
-            String fPartOverride = _runtimeParameters.getFPartOverride();
             List<AuthenticationParameters> authParams = _runtimeParameters.getAuthenticationParameters();
             String studyDirMsg = "Study directory: " + watershedDirectory.toString();
             String logFileFirMsg = "Log file directory: " + logFileDirectory.toString();
-            String storeRuleMsg = "Regular store rule: " + regularStoreRule;
-            String fPartOverrideMsg = "DSS f-part override: " + (fPartOverride == null ? "Not Overridden" : fPartOverride);
+
             setUpLoggingForConfigs(_configurationFiles, _runtimeParameters.getLogFileDirectory());
-            _fileLoggers.values().forEach(logger ->
+            for (MerlinDataExchangeLogger merlinDataExchangeLogger : _fileLoggers.values())
             {
-                logger.logToHeader(performedOnMsg);
-                logger.logToHeader(timeWindowMsg);
-                logger.logToHeader(studyDirMsg);
-                logger.logToHeader(logFileFirMsg);
-                logger.logToHeader(storeRuleMsg);
-                logger.logToHeader(fPartOverrideMsg);
-                for(AuthenticationParameters authParam : authParams)
+                merlinDataExchangeLogger.logToHeader(performedOnMsg);
+                merlinDataExchangeLogger.logToHeader(timeWindowMsg);
+                merlinDataExchangeLogger.logToHeader(studyDirMsg);
+                merlinDataExchangeLogger.logToHeader(logFileFirMsg);
+                _runtimeParameters.logAdditionalParameters(merlinDataExchangeLogger);
+                for (AuthenticationParameters authParam : authParams)
                 {
-                    logger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsername());
+                    merlinDataExchangeLogger.logToHeader("Username for " + authParam.getUrl() + ": " + authParam.getUsername());
                 }
-            });
+            }
             MerlinDataExchangeStatus retVal = MerlinDataExchangeStatus.FAILURE;
             try
             {
@@ -157,7 +155,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
                 }
                 retVal = _completionTracker.getCompletionStatus();
             }
-            catch (MerlinConfigParseException | UnsupportedTemplateException | MerlinInitializationException e)
+            catch (MerlinConfigParseException | MerlinInitializationException e)
             {
                 String errorMsg = e.getMessage();
                 logError(errorMsg, e);
@@ -218,7 +216,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
     }
 
     private void initializeCacheForMerlinUrl(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions)
-            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException
+            throws MerlinAuthorizationException, MerlinInitializationException
     {
         try
         {
@@ -232,7 +230,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
     }
 
     private void initializeCacheForMerlinUrlWithAuthentication(ApiConnectionInfo connectionInfo, Map<Path, DataExchangeConfiguration> parsedConfiguartions, UsernamePasswordHolder usernamePassword)
-            throws UnsupportedTemplateException, MerlinAuthorizationException, MerlinInitializationException
+            throws MerlinAuthorizationException, MerlinInitializationException
     {
         TokenContainer token;
         try
@@ -343,7 +341,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
             List<DataExchangeSet> dataExchangeSets = dataExchangeConfig.getDataExchangeSets();
             dataExchangeSets.forEach(dataExchangeSet ->
             {
-                if(!_isCancelled.get())
+                if(!_isCancelled.get() && _runtimeParameters.supportsDataExchangeSet(dataExchangeSet))
                 {
                     MerlinDataExchangeLogBody logBody = new MerlinDataExchangeLogBody();
                     exchangeDataForSet(dataExchangeSet, dataExchangeConfig, logBody);
@@ -394,13 +392,14 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void exchangeData(DataExchangeSet dataExchangeSet, DataStore dataStoreSource, DataStore dataStoreDestination, MerlinDataExchangeLogBody logBody)
     {
         try
         {
             TemplateWrapper template = getTemplateFromDataExchangeSet(dataExchangeSet, dataStoreSource);
-            DataExchangeReader reader = DataExchangeReaderFactory.lookupReader(dataStoreSource);
-            DataExchangeWriter writer = DataExchangeWriterFactory.lookupWriter(dataStoreDestination);
+            DataExchangeReader<P,?> reader = (DataExchangeReader<P, ?>) DataExchangeReaderFactory.lookupReader(dataStoreSource, dataExchangeSet);
+            DataExchangeWriter<P,?> writer = (DataExchangeWriter<P, ?>) DataExchangeWriterFactory.lookupWriter(dataStoreDestination, dataExchangeSet);
             String sourcePath = dataStoreSource.getPath(); //for merlin this is a URL
             DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(sourcePath));
             if(cache != null)
@@ -439,6 +438,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
                     throw new UnsupportedQualityVersionException(dataExchangeSet.getQualityVersionName(), dataExchangeSet.getQualityVersionId());
                 }
                 List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
+                measures = reader.filterMeasuresToRead(dataExchangeSet, measures);
                 List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
                 measures.forEach(measure ->
                         measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, dataStoreSource, dataStoreDestination,
@@ -544,7 +544,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
     }
 
     private void initializeCacheForMerlinWithToken(Map<Path, DataExchangeConfiguration> parsedConfigurations, ApiConnectionInfo connectionInfo, TokenContainer token)
-            throws IOException, HttpAccessException, UnsupportedTemplateException
+            throws IOException, HttpAccessException, MerlinInitializationException
     {
 
         DataExchangeCache cache = _dataExchangeCache.get(connectionInfo);
@@ -567,10 +567,33 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
         {
             initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, connectionInfo, token);
         }
+        validateDepths(cache, connectionInfo);
+
+    }
+
+    private void validateDepths(DataExchangeCache cache, ApiConnectionInfo connectionInfo) throws MerlinInitializationException
+    {
+        for(Map.Entry<TemplateWrapper, List<MeasureWrapper>> entry : cache.getCachedTemplateToMeasures().entrySet())
+        {
+            List<MeasureWrapper> measures = entry.getValue();
+            int depthCount = 0;
+            for(MeasureWrapper measure : measures)
+            {
+                if(DataStoreProfile.DEPTH.equalsIgnoreCase(measure.getParameter()))
+                {
+                    depthCount++;
+                }
+                if(depthCount > 1)
+                {
+                    throw new MerlinInitializationException(connectionInfo,
+                            "Template " + entry.getKey().getName() + " has multiple profiles. Data Exchange does not currently support multiple profiles in a single template");
+                }
+            }
+        }
     }
 
     private void initializeCachedMeasurementsForMerlin(DataExchangeCache cache, Map<Path, DataExchangeConfiguration> parsedConfigurations,
-                                                       ApiConnectionInfo connectionInfo, TokenContainer token) throws UnsupportedTemplateException, IOException, HttpAccessException
+                                                       ApiConnectionInfo connectionInfo, TokenContainer token) throws IOException, HttpAccessException
     {
         for(Map.Entry<Path, DataExchangeConfiguration> entry : parsedConfigurations.entrySet())
         {
@@ -581,7 +604,7 @@ public final class MerlinDataExchangeEngine extends MerlinEngine implements Data
                 Optional<TemplateWrapper> templateOpt = cache.getCachedTemplates().stream()
                         .filter(t -> t.getName().equals(set.getTemplateName()) || t.getDprId().equals(set.getTemplateId()))
                         .findFirst();
-                if(templateOpt.isPresent())
+                if(templateOpt.isPresent() && _runtimeParameters.supportsDataExchangeSet(set))
                 {
                     TemplateWrapper template = templateOpt.get();
                     boolean alreadyCached = cache.getCachedTemplateToMeasures().containsKey(template);

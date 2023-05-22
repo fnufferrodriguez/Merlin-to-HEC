@@ -5,7 +5,7 @@ import gov.usbr.wq.merlindataexchange.MerlinDataExchangeEngine;
 import java.time.Duration;
 import java.time.Instant;
 
-final class ReadWriteTimestampUtil
+public final class ReadWriteTimestampUtil
 {
 
     private ReadWriteTimestampUtil()

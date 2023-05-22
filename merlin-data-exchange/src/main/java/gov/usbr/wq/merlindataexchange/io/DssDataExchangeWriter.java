@@ -2,10 +2,12 @@ package gov.usbr.wq.merlindataexchange.io;
 
 import com.rma.io.DssFileManagerImpl;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
+import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
-import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
+import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
 import hec.heclib.dss.DSSPathname;
 import hec.io.StoreOption;
 import hec.io.TimeSeriesContainer;
@@ -24,17 +26,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 100, path = DataExchangeWriter.LOOKUP_PATH
-        + "/" + DssDataExchangeWriter.DSS)
-public final class DssDataExchangeWriter implements DataExchangeWriter
+        + "/" + MerlinDataExchangeTimeSeriesReader.TIMESERIES + "/" + DssDataExchangeWriter.DSS)
+public final class DssDataExchangeWriter implements DataExchangeWriter<MerlinTimeSeriesParameters, TimeSeriesContainer>
 {
     public static final String DSS = "dss";
     private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
     public static final String MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.dss.singlethread";
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
     @Override
-    public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, MerlinParameters runtimeParameters, DataStore destinationDataStore,
-                          MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger, AtomicBoolean isCancelled,
-                          AtomicReference<String> readDurationString)
+    public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, DataExchangeSet set, MerlinTimeSeriesParameters runtimeParameters, DataExchangeCache cache,
+                          DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
+                          AtomicBoolean isCancelled, AtomicReference<String> readDurationString)
     {
         Path dssWritePath = Paths.get(getDestinationPath(destinationDataStore, runtimeParameters));
         String seriesString = measure.getSeriesString();
@@ -108,7 +110,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         return useSingleThreading;
     }
 
-    private int writeDss(TimeSeriesContainer timeSeriesContainer, Path dssWritePath, MerlinParameters runtimeParameters, MeasureWrapper measure,
+    private int writeDss(TimeSeriesContainer timeSeriesContainer, Path dssWritePath, MerlinTimeSeriesParameters runtimeParameters, MeasureWrapper measure,
                          MerlinExchangeCompletionTracker completionTracker, MerlinDataExchangeLogBody logFileLogger, ProgressListener progressListener, AtomicReference<String> readDurationString)
     {
         int success;
@@ -142,12 +144,6 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
         return success;
     }
 
-    @Override
-    public String getDestinationPath(DataStore destinationDataStore, MerlinParameters parameters)
-    {
-        return buildAbsoluteDssWritePath(destinationDataStore.getPath(), parameters.getWatershedDirectory()).toString();
-    }
-
     private int getNumTrimmedValues(TimeSeriesContainer timeSeriesContainer)
     {
         int missingCount = 0;
@@ -159,17 +155,6 @@ public final class DssDataExchangeWriter implements DataExchangeWriter
             }
         }
         return missingCount;
-    }
-
-    private static Path buildAbsoluteDssWritePath(String filepath, Path watershedDir)
-    {
-        Path xmlFilePath = Paths.get(filepath);
-        if(!xmlFilePath.isAbsolute() && filepath.contains("$WATERSHED"))
-        {
-            filepath = filepath.replace("$WATERSHED", watershedDir.toString());
-            xmlFilePath = Paths.get(filepath);
-        }
-        return xmlFilePath;
     }
 
     private void logProgress(ProgressListener progressListener, String message, int percentComplete)
