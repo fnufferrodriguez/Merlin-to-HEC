@@ -23,7 +23,8 @@ final class ProfileMeasuresUtil
     {
         List<MeasureWrapper> retVal = new ArrayList<>();
         String[] split = depthMeasure.getSeriesString().split("/");
-        String regex = "^" + split[0] +"/[^/]+/" + split[2] + "/" + split[3] + "/" + split[4] + "/" + split[5].substring(0, split[5].length()-1) + "\\d+$";
+        String prefix = split[0].substring(0, split[0].lastIndexOf("-")); // Get the prefix before the last "-"
+        String regex = "^" + prefix + "-[^/]+/[^/]+/" + split[2] + "/" + split[3] + "/" + split[4] + "/" + split[5].substring(0, split[5].length()-1) + "\\d+$";
         Pattern pattern = Pattern.compile(regex);
         Optional<TemplateWrapper> template = cache.getCachedTemplates().stream()
                 .filter(t -> t.getName().equalsIgnoreCase(dataExchangeSet.getTemplateName())
