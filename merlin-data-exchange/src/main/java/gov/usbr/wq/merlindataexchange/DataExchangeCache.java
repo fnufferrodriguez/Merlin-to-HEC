@@ -6,6 +6,7 @@ import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +39,7 @@ public final class DataExchangeCache
         _cachedTemplates.addAll(templates);
         for(TemplateWrapper template : templates)
         {
-            _cachedTemplateToMeasures.put(template, new ArrayList<>());
+            _cachedTemplateToMeasures.put(template, Collections.emptyList());
         }
     }
 
