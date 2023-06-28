@@ -36,6 +36,10 @@ public final class DataExchangeCache
     public void cacheTemplates(List<TemplateWrapper> templates)
     {
         _cachedTemplates.addAll(templates);
+        for(TemplateWrapper template : templates)
+        {
+            _cachedTemplateToMeasures.put(template, new ArrayList<>());
+        }
     }
 
     public void cacheQualityVersions(List<QualityVersionWrapper> qualityVersions)

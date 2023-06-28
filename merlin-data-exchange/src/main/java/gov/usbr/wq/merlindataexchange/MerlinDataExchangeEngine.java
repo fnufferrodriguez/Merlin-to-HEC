@@ -602,12 +602,12 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
             for(DataExchangeSet set : exchangeSets)
             {
                 Optional<TemplateWrapper> templateOpt = cache.getCachedTemplates().stream()
-                        .filter(t -> t.getName().equals(set.getTemplateName()) || t.getDprId().equals(set.getTemplateId()))
+                        .filter(t -> t.getName().equalsIgnoreCase(set.getTemplateName()) || t.getDprId().equals(set.getTemplateId()))
                         .findFirst();
                 if(templateOpt.isPresent() && _runtimeParameters.supportsDataExchangeSet(set))
                 {
                     TemplateWrapper template = templateOpt.get();
-                    boolean alreadyCached = cache.getCachedTemplateToMeasures().containsKey(template);
+                    boolean alreadyCached = !cache.getCachedTemplateToMeasures().get(template).isEmpty();
                     List<MeasureWrapper> measures;
                     if(!alreadyCached)
                     {
