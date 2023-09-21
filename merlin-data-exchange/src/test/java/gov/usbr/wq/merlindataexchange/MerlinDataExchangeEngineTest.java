@@ -155,6 +155,7 @@ final class MerlinDataExchangeEngineTest
         MeasureWrapper mw1 = new MeasureWrapper(measure1);
         MeasureWrapper mw2 = new MeasureWrapper(measure2);
         List<MeasureWrapper> measures = new ArrayList<>();
+        List<TemplateWrapper> templates = Collections.singletonList(template1);
         measures.add(mw1);
         measures.add(mw2);
         cache.cacheMeasures(template1, measures);
@@ -189,7 +190,7 @@ final class MerlinDataExchangeEngineTest
                 .withProgressListener(buildLoggingProgressListener())
                 .build();
 
-        assertThrows(MerlinInitializationException.class, () -> dataExchangeEngine.validateProjects(cache, connectionInfo));
+        assertThrows(MerlinInitializationException.class, () -> dataExchangeEngine.validateProjects(cache, connectionInfo, templates));
     }
 
     @Test
@@ -197,6 +198,7 @@ final class MerlinDataExchangeEngineTest
     {
         DataExchangeCache cache = new DataExchangeCache();
         TemplateWrapper template1 = new TemplateWrapper(new Template());
+        List<TemplateWrapper> templates = Collections.singletonList(template1);
         Measure measure1 = new Measure();
         measure1.setType(MerlinDataExchangeProfileReader.PROFILE);
         measure1.setSeriesString("MR Am.Folsom Lake-Site C-Water Temp/Temp-Water/INST-VAL/20146/0/54-250.10.310.1.1");
@@ -240,7 +242,7 @@ final class MerlinDataExchangeEngineTest
                 .withProgressListener(buildLoggingProgressListener())
                 .build();
 
-        assertThrows(MerlinInitializationException.class, () -> dataExchangeEngine.validateProjects(cache, connectionInfo));
+        assertThrows(MerlinInitializationException.class, () -> dataExchangeEngine.validateProjects(cache, connectionInfo, templates));
     }
 
 

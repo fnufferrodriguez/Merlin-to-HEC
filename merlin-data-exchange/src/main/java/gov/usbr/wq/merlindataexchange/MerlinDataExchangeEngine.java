@@ -11,7 +11,6 @@ import gov.usbr.wq.dataaccess.model.TemplateWrapper;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
-import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeIO;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeLookupException;
@@ -513,24 +512,28 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
 
     private TemplateWrapper getTemplateFromDataExchangeSet(DataExchangeSet dataExchangeSet, DataStore dataStore)
     {
-        String dataStorePath = dataStore.getPath();
-        String templateNameFromSet = dataExchangeSet.getTemplateName();
-        Integer templateIdFromSet = dataExchangeSet.getTemplateId();
-        DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(dataStorePath));
         TemplateWrapper retVal = null;
-        if(cache != null)
+        if(dataStore != null)
         {
-            List<TemplateWrapper> cachedTemplates = cache.getCachedTemplates();
-            retVal = cachedTemplates.stream()
-                    .filter(template -> template.getName().equalsIgnoreCase(templateNameFromSet))
-                    .findFirst()
-                    .orElse(null);
-            if(retVal == null)
+            String dataStorePath = dataStore.getPath();
+            String templateNameFromSet = dataExchangeSet.getTemplateName();
+            Integer templateIdFromSet = dataExchangeSet.getTemplateId();
+            DataExchangeCache cache = _dataExchangeCache.get(new ApiConnectionInfo(dataStorePath));
+
+            if (cache != null)
             {
+                List<TemplateWrapper> cachedTemplates = cache.getCachedTemplates();
                 retVal = cachedTemplates.stream()
-                        .filter(template -> Objects.equals(template.getDprId(), templateIdFromSet))
+                        .filter(template -> template.getName().equalsIgnoreCase(templateNameFromSet))
                         .findFirst()
                         .orElse(null);
+                if (retVal == null)
+                {
+                    retVal = cachedTemplates.stream()
+                            .filter(template -> Objects.equals(template.getDprId(), templateIdFromSet))
+                            .findFirst()
+                            .orElse(null);
+                }
             }
         }
         return retVal;
@@ -567,21 +570,40 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
         {
             initializeCachedMeasurementsForMerlin(cache, parsedConfigurations, connectionInfo, token);
         }
-        validateProjects(cache, connectionInfo);
+        for(DataExchangeConfiguration config : parsedConfigurations.values())
+        {
+            //get template for each set and collect into list
+            List<TemplateWrapper> templatesFromConfig = config.getDataExchangeSets().stream()
+                    .map(set -> getTemplateFromDataExchangeSet(set, getSourceDataStoreForSet(config, set)))
+                    .collect(toList());
+            validateProjects(cache, connectionInfo, templatesFromConfig);
+        }
 
     }
 
-    void validateProjects(DataExchangeCache cache, ApiConnectionInfo connectionInfo) throws MerlinInitializationException
+    private DataStore getSourceDataStoreForSet(DataExchangeConfiguration dataExchangeConfig, DataExchangeSet dataExchangeSet)
     {
-        for(Map.Entry<TemplateWrapper, List<MeasureWrapper>> entry : cache.getCachedTemplateToMeasures().entrySet())
+        DataStoreRef dataStoreRefB = dataExchangeSet.getDataStoreRefB();
+        DataStoreRef sourceRef = dataExchangeSet.getDataStoreRefA();
+        if (dataExchangeSet.getSourceId().equalsIgnoreCase(dataStoreRefB.getId()))
         {
-            List<MeasureWrapper> measures = entry.getValue();
-            if(!measures.isEmpty())
+            sourceRef = dataStoreRefB;
+        }
+        return dataExchangeConfig.getDataStoreByRef(sourceRef).orElse(null);
+    }
+
+    void validateProjects(DataExchangeCache cache, ApiConnectionInfo connectionInfo, List<TemplateWrapper> templatesFromConfig) throws MerlinInitializationException
+    {
+        for(TemplateWrapper template : templatesFromConfig)
+        {
+            List<MeasureWrapper> measures = cache.getCachedTemplateToMeasures().get(template);
+            if(measures != null && !measures.isEmpty())
             {
                 String projSiteSensor = measures.get(0).getProjectAndSiteAndSensor();
                 String proj = findSubstringBeforeSecondToLastDash(projSiteSensor);
-                for(MeasureWrapper measure : measures)
+                for(int i=1; i < measures.size(); i++)
                 {
+                    MeasureWrapper measure = measures.get(i);
                     if(MerlinDataExchangeProfileReader.PROFILE.equalsIgnoreCase(measure.getType()))
                     {
                         String projSiteSensorInList = measure.getProjectAndSiteAndSensor();
@@ -589,7 +611,7 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
                         if(!projInList.equals(proj))
                         {
                             throw new MerlinInitializationException(connectionInfo,
-                                    "Template " + entry.getKey().getName() + " has multiple projects. Data Exchange does not currently support multiple projects in a single template for profiles");
+                                    "Template " + template.getName() + " has multiple projects. Data Exchange does not currently support multiple projects in a single template for profiles");
                         }
                     }
                 }
