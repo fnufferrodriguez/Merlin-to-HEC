@@ -1,17 +1,21 @@
 package gov.usbr.wq.merlindataexchange.io.wq;
 
+import com.rma.io.DssFileManagerImpl;
 import gov.usbr.wq.dataaccess.model.MeasureWrapper;
 import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
+import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.io.CloseableReentrantLock;
 import gov.usbr.wq.merlindataexchange.io.DataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteLockManager;
 import gov.usbr.wq.merlindataexchange.io.ReadWriteTimestampUtil;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinParameters;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinProfileParameters;
+import hec.heclib.dss.DSSPathname;
+import hec.io.PairedDataContainer;
 import hec.ui.ProgressListener;
 import rma.services.annotations.ServiceProvider;
 
@@ -20,9 +24,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -34,14 +40,15 @@ import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 
 @ServiceProvider(service = DataExchangeWriter.class, position = 200, path = DataExchangeWriter.LOOKUP_PATH
-        + "/" + MerlinDataExchangeProfileReader.PROFILE + "/" + CsvProfileWriter.CSV)
-public final class CsvProfileWriter implements DataExchangeWriter<MerlinProfileParameters, ProfileSampleSet>
+        + "/" + MerlinDataExchangeProfileReader.PROFILE + "/" + CsvDssProfileWriter.CSV)
+public final class CsvDssProfileWriter implements DataExchangeWriter<MerlinProfileParameters, ProfileSampleSet>
 {
-    private static final Logger LOGGER = Logger.getLogger(CsvProfileWriter.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CsvDssProfileWriter.class.getName());
     public static final String CSV = "csv";
     public static final String MERLIN_TO_CSV_PROFILE_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.csv.profile.singlethread";
     public static final String YEAR_TAG = "<year>";
     public static final String STATION_TAG = "<station>";
+    private static final String DSS_DATE_FORMAT = "yyyy-MM-dd";
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
 
     @Override
@@ -123,11 +130,13 @@ public final class CsvProfileWriter implements DataExchangeWriter<MerlinProfileP
                 String station = profileSamples.getStation();
                 if(station != null)
                 {
-                    csvWritePathWithYear = csvWritePathWithYear.replace(STATION_TAG, station.replace(" ", "_"));
+                    station = station.replace(" ", "_");
+                    csvWritePathWithYear = csvWritePathWithYear.replace(STATION_TAG, station);
                 }
                 Path writePath = Paths.get(csvWritePathWithYear);
                 CsvProfileObjectMapper.serializeDataToCsvFile(writePath, samples);
                 writePaths.add(writePath);
+                writeToDss(Paths.get(writePath.toString().replace(".csv", ".dss")), samples, station);
             }
         }
         catch (IOException e)
@@ -141,6 +150,78 @@ public final class CsvProfileWriter implements DataExchangeWriter<MerlinProfileP
             LOGGER.config(() -> failMsg);
         }
         return writePaths;
+    }
+
+    private void writeToDss(Path writePath, SortedSet<ProfileSample> samples, String station)
+    {
+        for(ProfileSample sample : samples)
+        {
+            PairedDataContainer pdc = new PairedDataContainer();
+            pdc.setNumberCurves(sample.getConstituents().size()-1);
+            List<ProfileConstituent> constituents = sample.getConstituents();
+            Optional<ProfileConstituent> depthConstituentOpt = constituents.stream()
+                    .filter(c -> c.getParameter().equalsIgnoreCase(DataStoreProfile.DEPTH))
+                    .findFirst();
+            if(depthConstituentOpt.isPresent())
+            {
+                ProfileConstituent nonDepthConstituent = constituents.stream().filter(c -> !c.getParameter().equalsIgnoreCase(DataStoreProfile.DEPTH))
+                        .findFirst()
+                        .orElse(null);
+                if(nonDepthConstituent != null)
+                {
+                    ProfileConstituent depthConstituent = depthConstituentOpt.get();
+                    pdc.setNumberOrdinates(depthConstituent.getDataValues().size());
+                    pdc.xunits = depthConstituent.getUnit();
+                    pdc.xparameter = depthConstituent.getParameter().toUpperCase();
+                    pdc.yparameter = nonDepthConstituent.getParameter().toUpperCase();
+                    pdc.yunits = nonDepthConstituent.getUnit();
+                    double[] depths = toDoubleArray(depthConstituent.getDataValues());
+                    List<double[]> yValList = new ArrayList<>();
+                    for (int i = 1; i < sample.getConstituents().size(); i++)
+                    {
+                        ProfileConstituent constituent = sample.getConstituents().get(i);
+                        double[] values = toDoubleArray(constituent.getDataValues());
+                        yValList.add(values);
+                    }
+                    double[][] yVals = to2DArray(yValList);
+                    pdc.setValues(depths, yVals);
+                    pdc.switchXyAxis = true;
+                    pdc.fileName = writePath.toString();
+                    DSSPathname pathname = new DSSPathname();
+                    pathname.setBPart(station);
+                    pathname.setCPart(pdc.xparameter.toUpperCase() + "-" + pdc.yparameter);
+                    DateTimeFormatter desiredFormatter = DateTimeFormatter.ofPattern(DSS_DATE_FORMAT);
+                    String ePart = sample.getDateTime().format(desiredFormatter);
+                    pathname.setEPart(ePart);
+                    pdc.fullName = pathname.getPathname();
+                    int success = DssFileManagerImpl.getDssFileManager().write(pdc);
+                    if(success != 0)
+                    {
+                        LOGGER.log(Level.WARNING, () -> "Failed to write " + pdc.fullName + " to " + pdc.fileName + ".  Error code: " + success);
+                    }
+                }
+            }
+        }
+    }
+
+    private double[][] to2DArray(List<double[]> twoDList)
+    {
+        double[][] retVal = new double[twoDList.size()][];
+        for(int i=0; i < retVal.length; i++)
+        {
+            retVal[i] = twoDList.get(i);
+        }
+        return retVal;
+    }
+
+    private double[] toDoubleArray(List<Double> dataValues)
+    {
+        double[] retVal = new double[dataValues.size()];
+        for(int i=0; i < retVal.length; i++)
+        {
+            retVal[i] = dataValues.get(i);
+        }
+        return retVal;
     }
 
     private String getFileNameWithoutExtension(Path csvWritePath)
