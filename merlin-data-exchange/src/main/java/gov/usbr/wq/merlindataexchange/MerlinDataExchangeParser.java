@@ -9,11 +9,10 @@ import gov.usbr.wq.merlindataexchange.configuration.DataStoreProfile;
 import gov.usbr.wq.merlindataexchange.configuration.DataStoreRef;
 import gov.usbr.wq.merlindataexchange.io.DssDataExchangeWriter;
 import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeTimeSeriesReader;
-import gov.usbr.wq.merlindataexchange.io.wq.CsvProfileWriter;
+import gov.usbr.wq.merlindataexchange.io.wq.CsvDssProfileWriter;
 import gov.usbr.wq.merlindataexchange.io.wq.MerlinDataExchangeProfileReader;
 import hec.heclib.util.Unit;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -192,9 +191,9 @@ public final class MerlinDataExchangeParser
                 throw new MerlinConfigInvalidTypesException(configFilepath, dataStore, MerlinDataExchangeTimeSeriesReader.TIMESERIES, Collections.singletonList(DssDataExchangeWriter.DSS));
             }
             if(set.getDataType().equalsIgnoreCase(MerlinDataExchangeProfileReader.PROFILE)
-                    && !dataStore.getDataStoreType().equalsIgnoreCase(CsvProfileWriter.CSV))
+                    && !dataStore.getDataStoreType().equalsIgnoreCase(CsvDssProfileWriter.CSV))
             {
-                throw new MerlinConfigInvalidTypesException(configFilepath, dataStore, MerlinDataExchangeProfileReader.PROFILE, Collections.singletonList(CsvProfileWriter.CSV));
+                throw new MerlinConfigInvalidTypesException(configFilepath, dataStore, MerlinDataExchangeProfileReader.PROFILE, Collections.singletonList(CsvDssProfileWriter.CSV));
             }
         }
     }
