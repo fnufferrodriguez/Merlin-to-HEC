@@ -33,6 +33,7 @@ public final class DssDataExchangeWriter implements DataExchangeWriter<MerlinTim
     private static final Logger LOGGER = Logger.getLogger(DssDataExchangeWriter.class.getName());
     public static final String MERLIN_TO_DSS_WRITE_SINGLE_THREAD_PROPERTY_KEY = "merlin.dataexchange.writer.dss.singlethread";
     private final AtomicBoolean _loggedThreadProperty = new AtomicBoolean(false);
+    private final int DSS_WRITE_TYPE_MISMATCH_ERROR_CODE = -534304000;
     @Override
     public void writeData(TimeSeriesContainer timeSeriesContainer, MeasureWrapper measure, DataExchangeSet set, MerlinTimeSeriesParameters runtimeParameters, DataExchangeCache cache,
                           DataStore destinationDataStore, MerlinExchangeCompletionTracker completionTracker, ProgressListener progressListener, MerlinDataExchangeLogBody logFileLogger,
@@ -135,6 +136,11 @@ public final class DssDataExchangeWriter implements DataExchangeWriter<MerlinTim
             else
             {
                 success = DssFileManagerImpl.getDssFileManager().writeTS(timeSeriesContainer, storeOption);
+            }
+            if(success == DSS_WRITE_TYPE_MISMATCH_ERROR_CODE)
+            {
+                timeSeriesContainer.storedAsdoubles = !timeSeriesContainer.storedAsdoubles;
+                success = DssFileManagerImpl.getDssFileManager().write(timeSeriesContainer);
             }
         }
         finally
