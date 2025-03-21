@@ -2,7 +2,6 @@
 <data-exchange-configuration xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance">
     <supported-time-series-types>
         <supported-type>auto</supported-type>
-        <supported-type>step</supported-type>
     </supported-time-series-types>
     <supported-profile-types>
         <supported-type>profile</supported-type>

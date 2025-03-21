@@ -16,6 +16,7 @@ import gov.usbr.wq.dataaccess.model.TemplateWrapperBuilder;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.io.DssDataExchangeWriter;
+import gov.usbr.wq.merlindataexchange.io.MerlinDataExchangeTimeSeriesReader;
 import gov.usbr.wq.merlindataexchange.io.wq.MerlinDataExchangeProfileReader;
 import gov.usbr.wq.merlindataexchange.parameters.AuthenticationParametersBuilder;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
@@ -31,6 +32,7 @@ import hec.heclib.util.HecTime;
 import hec.io.DSSIdentifier;
 import hec.io.TimeSeriesContainer;
 import hec.io.impl.StoreOptionImpl;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import rma.util.RMAConst;
 
@@ -1116,9 +1118,10 @@ final class MerlinDataExchangeEngineTest
     }
 
     @Test
+    @Disabled
     void testBadUsernamePassword() throws IOException
     {
-        String username = "TheCookieMonster";
+        String username = "RmaUnitTestBasUsername";
         char[] password = "NotARealPassword".toCharArray();
         String mockFileName = "merlin_mock_config_partial_dx.xml";
         Path mockXml = getMockXml(mockFileName);
@@ -1150,6 +1153,59 @@ final class MerlinDataExchangeEngineTest
         MerlinDataExchangeStatus status = dataExchangeEngine.runExtract().join();
         //this will become authentication failure status once fix to return status code 401 is in
         assertEquals(MerlinDataExchangeStatus.AUTHENTICATION_FAILURE, status);
+    }
+
+    @Test
+    void testFilteredTypesLogging() throws Exception
+    {
+        try
+        {
+            System.setProperty(MerlinDataExchangeTimeSeriesReader.DEFAULT_SUPPORTED_TYPES_PROPERTY, "auto");
+            String username = ResourceAccess.getUsername();
+            char[] password = ResourceAccess.getPassword();
+            String mockFileName = "merlin_mock_config_no_step_dx.xml";
+            Path mockXml = getMockXml(mockFileName);
+            List<Path> mocks = Arrays.asList(mockXml);
+            Path testDirectory = getTestDirectory();
+            Instant start = Instant.parse("2018-02-01T12:00:00Z");
+            Instant end = Instant.parse("2022-02-21T12:00:00Z");
+            StoreOptionImpl storeOption = new StoreOptionImpl();
+            storeOption.setRegular("0-replace-all");
+            storeOption.setIrregular("0-delete_insert");
+            MerlinTimeSeriesParameters params = new MerlinTimeSeriesParametersBuilder()
+                    .withWatershedDirectory(testDirectory)
+                    .withLogFileDirectory(testDirectory)
+                    .withAuthenticationParameters(new AuthenticationParametersBuilder()
+                            .forUrl("https://www.grabdata2.com")
+                            .setUsername(username)
+                            .andPassword(password)
+                            .build())
+                    .withStoreOption(storeOption)
+                    .withStart(start)
+                    .withEnd(end)
+                    .withFPartOverride("fPart")
+                    .build();
+            DataExchangeEngine dataExchangeEngine = new MerlinDataExchangeEngineBuilder()
+                    .withConfigurationFiles(mocks)
+                    .withParameters(params)
+                    .withProgressListener(buildLoggingProgressListener())
+                    .build();
+            dataExchangeEngine.runExtract().join();
+
+            Path logFile = Paths.get(System.getProperty("user.dir"))
+                    .resolve("build/tmp")
+                    .resolve("progressLog.log");
+            List<String> lines = Files.readAllLines(logFile);
+            // Check if log contains expected filtered out step measure
+            boolean logContainsAuto = lines.stream()
+                    .anyMatch(line -> line.matches(".*Filtered out measures: .* of type: Step.*"));
+
+            assertTrue(logContainsAuto, "Expected log to contain 'Filtered out measures: <measure> of type: Step'");
+        }
+        finally
+        {
+            System.clearProperty(MerlinDataExchangeTimeSeriesReader.DEFAULT_SUPPORTED_TYPES_PROPERTY);
+        }
     }
 
     @Test

@@ -10,6 +10,7 @@ import gov.usbr.wq.merlindataexchange.DataExchangeCache;
 import gov.usbr.wq.merlindataexchange.MerlinDataExchangeLogBody;
 import gov.usbr.wq.merlindataexchange.NoEventsException;
 import gov.usbr.wq.merlindataexchange.MerlinExchangeCompletionTracker;
+import gov.usbr.wq.merlindataexchange.configuration.DataExchangeConfiguration;
 import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import gov.usbr.wq.merlindataexchange.configuration.DataStore;
 import gov.usbr.wq.merlindataexchange.parameters.MerlinTimeSeriesParameters;
@@ -19,8 +20,10 @@ import hec.heclib.util.HecTime;
 import hec.hecmath.HecMathException;
 import hec.io.TimeSeriesContainer;
 import hec.ui.ProgressListener;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import rma.services.annotations.ServiceProvider;
 
 import java.io.IOException;
@@ -43,6 +46,7 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     private static final String STEP_TYPE = "step";
     public static final String TIMESERIES = "time-series"; //this corresponds to data-type in set we are reading for
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeTimeSeriesReader.class.getName());
+    public static final String DEFAULT_SUPPORTED_TYPES_PROPERTY = "merlin.reader.timeseries.defaultSupportedTypes.csv";
 
     @Override
     protected TimeSeriesContainer convertToType(DataWrapper data, DataStore sourceDataStore, String unitSystemToConvertTo, MerlinTimeSeriesParameters parameters,
@@ -128,14 +132,36 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
     }
 
     @Override
-    public List<MeasureWrapper> filterMeasuresToRead(DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures)
+    public List<MeasureWrapper> filterMeasuresToRead(DataExchangeConfiguration dataExchangeConfig, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures)
     {
         //filter out profile data for time series
-        Set<String> supportedTypes = new LinkedHashSet<>(dataExchangeSet.getSupportedTypes());
+        Set<String> supportedTypes = new LinkedHashSet<>(dataExchangeConfig.getSupportedTimeSeriesTypes());
+        Set<String> supportedTypesLower = supportedTypes.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
         //support auto and step by default
-        supportedTypes.add(AUTO_TYPE);
-        supportedTypes.add(STEP_TYPE);
-        return measures.stream().filter(m -> supportedTypes.contains(m.getType().toLowerCase()))
+        supportedTypesLower.addAll(getDefaultSupportedTypes());
+        return measures.stream().filter(m -> supportedTypesLower.contains(m.getType().toLowerCase()))
                 .collect(toList());
+    }
+
+    @Override
+    public Set<String> getDefaultSupportedTypes()
+    {
+        Set<String> retVal = new HashSet<>();
+        if(System.getProperty(DEFAULT_SUPPORTED_TYPES_PROPERTY) != null)
+        {
+            String[] types = System.getProperty(DEFAULT_SUPPORTED_TYPES_PROPERTY).split(",");
+            for(String type : types)
+            {
+                retVal.add(type.toLowerCase().trim());
+            }
+        }
+        else
+        {
+            retVal.add(AUTO_TYPE);
+            retVal.add(STEP_TYPE);
+        }
+        return retVal;
     }
 }

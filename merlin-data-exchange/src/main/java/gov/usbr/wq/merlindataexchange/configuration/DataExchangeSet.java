@@ -1,10 +1,7 @@
 package gov.usbr.wq.merlindataexchange.configuration;
 
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import hec.heclib.util.Unit;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class DataExchangeSet
 {
@@ -24,23 +21,15 @@ public final class DataExchangeSet
     private String _unitSystem = Unit.ENGLISH;
     @JacksonXmlProperty(localName = "data-type")
     private String _dataType;
-    @JacksonXmlProperty(localName = "supported-types")
-    @JacksonXmlElementWrapper(useWrapping = true)
-    private List<String> _supportedTypes = new ArrayList<>();
+
     @JacksonXmlProperty(localName = "datastore-ref-a")
     private DataStoreRef _dataStoreRefA;
     @JacksonXmlProperty(localName = "datastore-ref-b")
     private DataStoreRef _dataStoreRefB;
 
-
     public  String getId()
     {
         return _id;
-    }
-
-    public void setId(String id)
-    {
-        _id = id;
     }
 
     public String getSourceId()
@@ -48,19 +37,9 @@ public final class DataExchangeSet
         return _sourceId;
     }
 
-    public void setSourceId(String sourceId)
-    {
-        _sourceId = sourceId;
-    }
-
     public Integer getTemplateId()
     {
         return _templateId;
-    }
-
-    public void setTemplateId(int templateId)
-    {
-        _templateId = templateId;
     }
 
     public Integer getQualityVersionId()
@@ -68,19 +47,9 @@ public final class DataExchangeSet
         return _qualityVersionId;
     }
 
-    public void setQualityVersionId(Integer qualityVersionId)
-    {
-        _qualityVersionId = qualityVersionId;
-    }
-
     public String getUnitSystem()
     {
         return _unitSystem;
-    }
-
-    public void setUnitSystem(String unitSystem)
-    {
-        _unitSystem = unitSystem;
     }
 
     public DataStoreRef getDataStoreRefA()
@@ -88,19 +57,9 @@ public final class DataExchangeSet
         return _dataStoreRefA;
     }
 
-    public void setDataStoreRefA(DataStoreRef dataStoreRefA)
-    {
-        _dataStoreRefA = dataStoreRefA;
-    }
-
     public DataStoreRef getDataStoreRefB()
     {
         return _dataStoreRefB;
-    }
-
-    public void setDataStoreRefB(DataStoreRef dataStoreRefB)
-    {
-        _dataStoreRefB = dataStoreRefB;
     }
 
     public String getTemplateName()
@@ -108,38 +67,13 @@ public final class DataExchangeSet
         return _templateName;
     }
 
-    public void setTemplateName(String templateName)
-    {
-        _templateName = templateName;
-    }
-
     public String getQualityVersionName()
     {
         return _qualityVersionName;
     }
 
-    public void setQualityVersionName(String qualityVersionName)
-    {
-        _qualityVersionName = qualityVersionName;
-    }
-
     public String getDataType()
     {
         return _dataType;
-    }
-
-    public void setDataType(String dataType)
-    {
-        _dataType = dataType;
-    }
-
-    public List<String> getSupportedTypes()
-    {
-        return _supportedTypes;
-    }
-
-    public void setSupportedTypes(List<String> supportedTypes)
-    {
-        _supportedTypes = supportedTypes;
     }
 }
