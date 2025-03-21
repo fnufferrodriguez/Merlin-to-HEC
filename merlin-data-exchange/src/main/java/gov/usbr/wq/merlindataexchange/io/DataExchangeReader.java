@@ -11,6 +11,7 @@ import gov.usbr.wq.merlindataexchange.configuration.DataExchangeSet;
 import hec.ui.ProgressListener;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,4 +27,6 @@ public interface DataExchangeReader<P extends MerlinParameters, T> extends DataE
     String getSourcePath(DataStore sourceDataStore, MerlinParameters parameters);
 
     List<MeasureWrapper> filterMeasuresToRead(DataExchangeConfiguration dataExchangeConfig, DataExchangeSet dataExchangeSet, List<MeasureWrapper> measures);
+
+    Set<String> getDefaultSupportedTypes();
 }

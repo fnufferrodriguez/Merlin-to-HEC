@@ -444,9 +444,12 @@ public final class MerlinDataExchangeEngine<P extends MerlinParameters> extends 
                         .filter(m -> !measures.contains(m))
                         .map(meas -> meas.getSeriesString() + " of type: " + meas.getType())
                         .collect(toList());
-                String filteredMeasuresString = "Filtered out measures: " + String.join(",\n", filteredOutMeasureSeriesStrings);
-                logBody.log(filteredMeasuresString);
-                logGeneralProgress(filteredMeasuresString);
+                if(!filteredOutMeasureSeriesStrings.isEmpty())
+                {
+                    String filteredMeasuresString = "Filtered out measures: " + String.join(",\n", filteredOutMeasureSeriesStrings);
+                    logBody.log(filteredMeasuresString);
+                    logGeneralProgress(filteredMeasuresString);
+                }
                 List<CompletableFuture<Void>> measurementFutures = new ArrayList<>();
                 measures.forEach(measure ->
                         measurementFutures.add(DataExchangeIO.exchangeData(reader, writer, dataExchangeSet, _runtimeParameters, dataStoreSource, dataStoreDestination,

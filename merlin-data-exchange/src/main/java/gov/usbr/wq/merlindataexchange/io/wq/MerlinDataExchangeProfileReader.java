@@ -24,6 +24,7 @@ import hec.data.Units;
 import hec.data.UnitsConversionException;
 import hec.heclib.util.Unit;
 import hec.ui.ProgressListener;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import rma.services.annotations.ServiceProvider;
@@ -52,6 +53,7 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
 {
     public static final String PROFILE = "profile";
     private static final Logger LOGGER = Logger.getLogger(MerlinDataExchangeProfileReader.class.getName());
+    public static final String DEFAULT_SUPPORTED_TYPES_PROPERTY = "merlin.reader.profile.defaultSupportedTypes.csv";
 
     @Override
     protected ProfileSampleSet convertToType(MerlinProfileDataWrappers dataWrappers, DataStore dataStore, String unitSystemToConvertTo,
@@ -309,9 +311,28 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
         //the other constituent measures will happen internally inside the reader
         Set<String> supportedTypes = new LinkedHashSet<>(dataExchangeConfig.getSupportedProfileTypes());
         //default type of profile
-        supportedTypes.add(PROFILE);
+        supportedTypes.addAll(getDefaultSupportedTypes());
         return measures.stream().filter(m -> m.getParameter().equalsIgnoreCase(DataStoreProfile.DEPTH)
                                 && supportedTypes.contains(m.getType().toLowerCase()))
                         .collect(toList());
+    }
+
+    @Override
+    public Set<String> getDefaultSupportedTypes()
+    {
+        Set<String> retVal = new HashSet<>();
+        if(System.getProperty(DEFAULT_SUPPORTED_TYPES_PROPERTY) != null)
+        {
+            String[] types = System.getProperty(DEFAULT_SUPPORTED_TYPES_PROPERTY).split(",");
+            for(String type : types)
+            {
+                retVal.add(type.trim());
+            }
+        }
+        else
+        {
+            retVal.add(PROFILE);
+        }
+        return retVal;
     }
 }
