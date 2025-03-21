@@ -140,7 +140,7 @@ public final class MerlinDataExchangeTimeSeriesReader extends MerlinDataExchange
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
         //support auto and step by default
-        supportedTypes.addAll(getDefaultSupportedTypes());
+        supportedTypesLower.addAll(getDefaultSupportedTypes());
         return measures.stream().filter(m -> supportedTypesLower.contains(m.getType().toLowerCase()))
                 .collect(toList());
     }

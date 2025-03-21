@@ -315,7 +315,7 @@ public final class MerlinDataExchangeProfileReader extends MerlinDataExchangeRea
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
         //default type of profile
-        supportedTypes.addAll(getDefaultSupportedTypes());
+        supportedTypesLower.addAll(getDefaultSupportedTypes());
         return measures.stream().filter(m -> m.getParameter().equalsIgnoreCase(DataStoreProfile.DEPTH)
                                 && supportedTypesLower.contains(m.getType().toLowerCase()))
                         .collect(toList());
