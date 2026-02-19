@@ -1,3 +1,17 @@
 rootProject.name = 'merlin-to-hec'
 
 include ":merlin-data-exchange"
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/DOI-BOR/Merlin-Web-Client")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
