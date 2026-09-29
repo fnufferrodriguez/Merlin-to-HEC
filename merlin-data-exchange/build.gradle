@@ -21,7 +21,11 @@ dependencies {
     implementation libs.hec.core
     implementation libs.hec.data
     implementation libs.hec.lib
-    implementation libs.merlin.web.client
+    implementation (libs.merlin.web.client){
+        version {
+            branch = "main"
+        }
+    }
 
     runtimeOnly libs.flogger.system.backend
 

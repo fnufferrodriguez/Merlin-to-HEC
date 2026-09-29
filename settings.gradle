@@ -8,11 +8,13 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
 
     repositories {
+
         mavenCentral()
 
         // Route only gov.usbr.wq artifacts to GitHub Packages
         exclusiveContent {
-            forRepository {
+            forRepositories (
+                mavenLocal(),
                 maven {
                     name = 'GitHubPackages'
                     url = uri('https://maven.pkg.github.com/doi-bor/Merlin-Web-Client')
@@ -21,7 +23,7 @@ dependencyResolutionManagement {
                         password = System.getenv("GITHUB_TOKEN")
                     }
                 }
-            }
+            )
             filter { includeGroup('gov.usbr.wq') }
         }
 
@@ -36,6 +38,18 @@ dependencyResolutionManagement {
             filter {
                 includeGroup('mil.army.usace.hec')
                 includeGroup('com.rmanet')
+            }
+        }
+        // New GitLab mirror repo
+        maven {
+            name = 'GitLabMirror'
+            url = uri('https://gitlab.bor.doi.net/api/v4/projects/992/packages/maven')
+            credentials(PasswordCredentials) {
+                username = System.getenv("GITLAB_USER")
+                password  = System.getenv("GITLAB_TOKEN")
+            }
+            authentication {
+                header(BasicAuthentication)
             }
         }
     }
