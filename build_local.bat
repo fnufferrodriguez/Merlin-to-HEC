@@ -1,7 +1,6 @@
-set GITHUB_ACTOR=
-set GITHUB_TOKEN=
-set NEXUS_USER=
-set NEXUS_PASSWORD=
-set GITHUB_REPOSITORY=DOI-BOR/WTMP-HEC-Public
+set GITHUB_ACTOR=reclamation-username
+set GITHUB_TOKEN=placeholder
+set NEXUS_USER=hec-username
+set NEXUS_PASSWORD=placeholder
 
-./gradlew build --info
+./gradlew build --stacktrace
