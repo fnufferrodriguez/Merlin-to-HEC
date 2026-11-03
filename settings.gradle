@@ -29,27 +29,23 @@ dependencyResolutionManagement {
 
         // Route HEC/Nexus artifacts to HEC’s public repository
         exclusiveContent {
-            forRepository {
+            forRepositories (
                 maven {
                     name = 'HEC_Nexus'
                     url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
+                },
+                maven {
+                    name = 'GitHub Mirror'
+                    url = uri('https://maven.pkg.github.com/doi-bor/WTMP-HEC-Public')
+                    credentials {
+                                username = System.getenv("GITHUB_ACTOR")
+                                password = System.getenv("GITHUB_TOKEN")
+                            }
                 }
-            }
+            )
             filter {
                 includeGroup('mil.army.usace.hec')
                 includeGroup('com.rmanet')
-            }
-        }
-        // New GitLab mirror repo
-        maven {
-            name = 'GitLabMirror'
-            url = uri('https://gitlab.bor.doi.net/api/v4/projects/992/packages/maven')
-            credentials(PasswordCredentials) {
-                username = System.getenv("GITLAB_USER")
-                password  = System.getenv("GITLAB_TOKEN")
-            }
-            authentication {
-                header(BasicAuthentication)
             }
         }
     }

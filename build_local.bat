@@ -2,7 +2,6 @@ set GITHUB_ACTOR=
 set GITHUB_TOKEN=
 set NEXUS_USER=
 set NEXUS_PASSWORD=
-set GITLAB_USER=
-set GITLAB_TOKEN=
+set GITHUB_REPOSITORY=DOI-BOR/WTMP-HEC-Public
 
 ./gradlew build --info
